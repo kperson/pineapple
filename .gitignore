@@ -1,0 +1,7 @@
+.DS_Store
+.build/
+.lambda-build/
+Package.resolved
+.swiftpm/
+.dockerignore
+.env

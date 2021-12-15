@@ -1,0 +1,8 @@
+#https://theodorebrgn.medium.com/localstacks-guide-to-run-aws-serverless-environment-locally-discover-the-power-of-lambda-f958f8b6330
+version: '3.8'
+
+services:
+  runtime-api-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
