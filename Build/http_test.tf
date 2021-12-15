@@ -14,7 +14,7 @@ module "http_test" {
   ecr_repo_name = "httptest"
 
   env = {
-    HELLO = "world"
+    MY_HANDLER = "com.kperson.http"
   }
 
   role                 = module.lambda_role_arn.out

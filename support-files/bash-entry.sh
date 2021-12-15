@@ -2,15 +2,6 @@
 
 set -x
 
-#unset LD_LIBRARY_PATH
-#unset PYTHONPATH
-#unset NODE_PATH
-#unset CLASSPATH
-#unset RUBYLIB
-#unset GEM_PATH
-#export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-#printenv
-
 if [ "${IGNORE_LAMBDA}" = "1" ]; then
     echo 'Treating As Regular Script'
     exec "$@"

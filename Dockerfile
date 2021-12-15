@@ -15,4 +15,4 @@ ADD . /code
 WORKDIR /code
 RUN mkdir -p .lambda-build
 RUN swift build --build-path .lambda-build -c release && rm -rf /code/.swiftpm
-CMD ["/code/.lambda-build/release/LambdaRuntimeAPIDemo"]
+CMD ["/code/.lambda-build/release/LambdaVaporDemo"]

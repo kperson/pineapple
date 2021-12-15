@@ -3,12 +3,6 @@ import Foundation
 import FoundationNetworking
 #endif
 
-#if os(Linux)
-import Glibc
-#else
-import Darwin.C
-#endif
-
 public struct LambdaPayload {
     
     public let body: Data
@@ -19,7 +13,6 @@ public struct LambdaPayload {
         self.headers = headers
     }
 }
-
 
 public struct LambdaError: Codable, Error {
     
@@ -143,13 +136,21 @@ public class LambdaRuntime {
     
     private let encoder = JSONEncoder()
     private let semaphore = DispatchSemaphore(value: 0)
+    private let runAsync: Bool
     
+    
+    /// Initializes a Lambda Runtime
+    /// - Parameters:
+    ///   - runTimeAPI: the API enpoint to hit
+    ///   - runAsync: if some other process if keeping the application alive, set to true, defaults to false
     public init(
-        runTimeAPI: String? = nil
+        runTimeAPI: String? = nil,
+        runAsync: Bool = false
     ) {
         self.runtimeAPI = runTimeAPI
             ?? ProcessInfo.processInfo.environment["AWS_LAMBDA_RUNTIME_API"]
             ?? "localhost:8080"
+        self.runAsync = runAsync
     }
     
     public func start() {
@@ -157,14 +158,18 @@ public class LambdaRuntime {
             isRunning = true
             logHandler?.handleRuntimeLog(.runTimeInitialized(api: runtimeAPI))
             next()
-            semaphore.wait()
+            if !runAsync {
+                semaphore.wait()
+            }
         }
     }
     
     public func stop() {
         if isRunning {
             isRunning = false
-            semaphore.signal()
+            if !runAsync {
+                semaphore.signal()
+            }
         }
     }
     
