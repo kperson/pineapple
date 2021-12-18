@@ -142,8 +142,20 @@ public struct LambdaRequestResponse {
     
 }
 
+public protocol Runtime {
 
-public class LambdaRuntime {
+    func start()
+    func stop()
+    func sendResponse(requestId: String, data: Data)
+    func sendInitializationError(error: LambdaError)
+    func sendInvocationError(requestId: String, error: LambdaError)
+    
+    var eventHandler: LambdaEventHandler? { get set }
+    var logHandler: LambdaRuntimeLogHandler? { get set }
+    
+}
+
+public class LambdaRuntime: Runtime {
     
     public weak var eventHandler: LambdaEventHandler?
     public weak var logHandler: LambdaRuntimeLogHandler?
@@ -214,7 +226,7 @@ public class LambdaRuntime {
         }
     }
     
-    func sendResponse(requestId: String, data: Data) {
+    public func sendResponse(requestId: String, data: Data) {
         request(
             method: "POST",
             path: "2018-06-01/runtime/invocation/\(requestId)/response",
@@ -225,7 +237,7 @@ public class LambdaRuntime {
         }
     }
     
-    func sendInitializationError(error: LambdaError) {
+    public func sendInitializationError(error: LambdaError) {
         if let data = try? encoder.encode(error) {
             request(
                 method: "POST",
@@ -238,7 +250,7 @@ public class LambdaRuntime {
         }
     }
     
-    func sendInvocationError(requestId: String, error: LambdaError) {
+    public func sendInvocationError(requestId: String, error: LambdaError) {
         if let data = try? encoder.encode(error) {
             request(
                 method: "POST",

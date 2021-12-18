@@ -23,14 +23,15 @@ public class LambdaApp: LambdaEventHandler {
         
     }
     
-    public let runtime = LambdaRuntime()
+    public final var runtime: Runtime
     private let handlerKeyResolver: (LambdaEvent) -> String?
     private var handlers: [String : (LambdaEvent) -> Void] = [:]
     private var internalLogHandler: LambdaRuntimeLogHandlerWrapper?
     
-    public init(_ resolveHandler: @escaping (LambdaEvent) -> String?) {
+    public init(runtime: Runtime = LambdaRuntime(), _ resolveHandler: @escaping (LambdaEvent) -> String?) {
         self.handlerKeyResolver = resolveHandler
-        runtime.eventHandler = self
+        self.runtime = runtime
+        self.runtime.eventHandler = self
     }
     
     convenience public init(enviromentVariable: String = "_HANDLER") {
