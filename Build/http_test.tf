@@ -1,5 +1,6 @@
 resource "aws_api_gateway_rest_api" "http-test" {
-  name = "http-test"
+  name               = "http-test"
+  binary_media_types = ["*/*"]
 
   endpoint_configuration {
     types = ["REGIONAL"]
@@ -7,10 +8,10 @@ resource "aws_api_gateway_rest_api" "http-test" {
 }
 
 module "http_test" {
-  source      = "./http-lambda"
-  image_uri   = "pineapple_runtime-api-test:latest"
-  memory_size = "512"
-  timeout     = "30"
+  source        = "./http-lambda"
+  image_uri     = "pineapple"
+  memory_size   = "512"
+  timeout       = "30"
   ecr_repo_name = "httptest"
 
   env = {

@@ -128,34 +128,23 @@ data "aws_ecr_authorization_token" "ecr_token" {
   registry_id = aws_ecr_repository.ecr_repo.registry_id
 }
 
-resource "null_resource" "docker_login" {
-  triggers = {
-    time = timestamp()
-  }
-
-  provisioner "local-exec" {
-
-    command = format("docker login --username %s --password %s %s", data.aws_ecr_authorization_token.ecr_token.user_name, data.aws_ecr_authorization_token.ecr_token.password, data.aws_ecr_authorization_token.ecr_token.proxy_endpoint)
-    environment = {
-    }
-  }
-}
-
 resource "null_resource" "build_and_push" {
   triggers = {
     time = timestamp()
   }
 
-  depends_on = [null_resource.docker_login]
-
   provisioner "local-exec" {
 
     command = format(
-      "docker tag %s %s:latest && docker push %s:latest && docker rmi %s:latest",
+      "docker login --username %s --password %s %s && docker tag %s %s:latest && docker push %s:latest && docker rmi %s:latest && docker logout %s",
+      data.aws_ecr_authorization_token.ecr_token.user_name,
+      data.aws_ecr_authorization_token.ecr_token.password,
+      data.aws_ecr_authorization_token.ecr_token.proxy_endpoint,
       var.image_uri,
       aws_ecr_repository.ecr_repo.repository_url,
       aws_ecr_repository.ecr_repo.repository_url,
-      aws_ecr_repository.ecr_repo.repository_url
+      aws_ecr_repository.ecr_repo.repository_url,
+      data.aws_ecr_authorization_token.ecr_token.proxy_endpoint
     )
     environment = {
     }
@@ -163,20 +152,26 @@ resource "null_resource" "build_and_push" {
 }
 
 data "aws_ecr_image" "image" {
+  depends_on      = [null_resource.build_and_push]
   repository_name = var.ecr_repo_name
   image_tag       = "latest"
+}
+
+resource "aws_cloudwatch_log_group" "lambda" {
+  name              = format("/aws/lambda/%s", aws_lambda_function.lambda.function_name)
+  retention_in_days = 30
 }
 
 resource "aws_lambda_function" "lambda" {
   depends_on = [null_resource.build_and_push]
 
-  function_name = var.function_name
-  role          = var.role
-  publish       = true
-  package_type  = "Image"
-  memory_size   = var.memory_size
-  timeout       = var.timeout
-  handler       = var.handler
+  function_name    = var.function_name
+  role             = var.role
+  publish          = true
+  package_type     = "Image"
+  memory_size      = var.memory_size
+  timeout          = var.timeout
+  handler          = var.handler
   source_code_hash = trimprefix(data.aws_ecr_image.image.id, "sha256:")
 
   vpc_config {
@@ -189,7 +184,7 @@ resource "aws_lambda_function" "lambda" {
   }
 
   image_uri = format("%s:latest", aws_ecr_repository.ecr_repo.repository_url)
-  
+
   image_config {
     command     = var.command
     entry_point = var.entry_point

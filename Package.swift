@@ -9,7 +9,8 @@ let package = Package(
     products: [
         .library(name: "LambdaRuntimeAPI", targets: ["LambdaRuntimeAPI"]),
         .library(name: "LambdaApp", targets: ["LambdaApp"]),
-        .library(name: "LambdaVapor", targets: ["LambdaVapor"])
+        .library(name: "LambdaVapor", targets: ["LambdaVapor"]),
+        .library(name: "LambdaApiGateway", targets: ["LambdaApiGateway"])
     ],
     dependencies: [
         .package(url: "https://github.com/vapor/vapor.git", .upToNextMajor(from: "4.54.0"))
@@ -25,28 +26,29 @@ let package = Package(
                 "LambdaRuntimeAPI"
             ],
             path: "./Source/LambdaApp"
+        ),        
+        .target(
+            name: "LambdaApiGateway",
+            dependencies: [
+                "LambdaApp"
+            ],
+            path: "./Source/LambdaApiGateway"
         ),
         .target(
             name: "LambdaVapor",
             dependencies: [
                 .product(name: "Vapor", package: "vapor"),
-                "LambdaApp"
+                "LambdaApiGateway"
             ],
             path: "./Source/LambdaVapor"
         ),
         .target(
             name: "LambdaVaporDemo",
             dependencies: [
-                "LambdaVapor"
+                "LambdaVapor",
+                "LambdaApiGateway"
             ],
             path: "./Source/LambdaVaporDemo"
-        ),
-        .target(
-            name: "Sandbox",
-            dependencies: [
-                .product(name: "Vapor", package: "vapor")
-            ],
-            path: "./Source/Sandbox"
         )
     ]
 )

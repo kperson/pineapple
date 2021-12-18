@@ -9,24 +9,39 @@ public protocol LambdaAppEventHandler {
 
 public class LambdaApp: LambdaEventHandler {
     
-    public let runtime = LambdaRuntime()
-    private let handlerKeyResolver: () -> String?
-    private var handlers: [String : (LambdaEvent) -> Void] = [:]
+    private class LambdaRuntimeLogHandlerWrapper: LambdaRuntimeLogHandler {
+  
+        let handler: (LambdaLogEvent) -> Void
+        
+        init(_ handler: @escaping (LambdaLogEvent) -> Void) {
+            self.handler = handler
+        }
+        
+        func handleRuntimeLog(_ log: LambdaLogEvent) {
+            handler(log)
+        }
+        
+    }
     
-    public init(_ resolveHandler: @escaping () -> String?) {
+    public let runtime = LambdaRuntime()
+    private let handlerKeyResolver: (LambdaEvent) -> String?
+    private var handlers: [String : (LambdaEvent) -> Void] = [:]
+    private var internalLogHandler: LambdaRuntimeLogHandlerWrapper?
+    
+    public init(_ resolveHandler: @escaping (LambdaEvent) -> String?) {
         self.handlerKeyResolver = resolveHandler
         runtime.eventHandler = self
     }
     
     convenience public init(enviromentVariable: String = "_HANDLER") {
-        self.init {
+        self.init { _ in
             ProcessInfo.processInfo.environment[enviromentVariable]
         }
     }
     
     convenience public init(singleHandler: @escaping (LambdaEvent) -> Void) {
         let defaultKey = "_DEFAULT_HANDLER_LAMBDA_APP_SWIFT"
-        self.init {
+        self.init { _ in
             defaultKey
         }
         handlers[defaultKey] = singleHandler
@@ -52,9 +67,14 @@ public class LambdaApp: LambdaEventHandler {
         runtime.logHandler = handler
     }
     
+    public func setRunTimeLogHandler(_ handler: @escaping (LambdaLogEvent) -> Void) {
+        internalLogHandler = LambdaRuntimeLogHandlerWrapper(handler)
+        runtime.logHandler = internalLogHandler
+    }
+    
     // MARK: LambdaEventHandler
     public func handleEvent(_ event: LambdaEvent) {
-        if let k = handlerKeyResolver() {
+        if let k = handlerKeyResolver(event) {
             if let h = handlers[k] {
                 h(event)
             }

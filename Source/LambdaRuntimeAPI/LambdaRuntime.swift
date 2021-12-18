@@ -3,6 +3,13 @@ import Foundation
 import FoundationNetworking
 #endif
 
+#if os(Linux)
+import Glibc
+#else
+import Darwin.C
+#endif
+
+
 public struct LambdaPayload {
     
     public let body: Data
@@ -26,6 +33,16 @@ public struct LambdaError: Codable, Error {
         stackTrace: [String] = []
     ) {
         self.errorMessage = errorMessage
+        self.errorType = errorType
+        self.stackTrace = stackTrace
+    }
+    
+    public init(
+        error: Error,
+        errorType: String? = nil,
+        stackTrace: [String] = []
+    ) {
+        self.errorMessage = error.localizedDescription
         self.errorType = errorType
         self.stackTrace = stackTrace
     }
@@ -147,6 +164,8 @@ public class LambdaRuntime {
         runTimeAPI: String? = nil,
         runAsync: Bool = false
     ) {
+        setbuf(stdout, nil)
+        setbuf(stderr, nil)
         self.runtimeAPI = runTimeAPI
             ?? ProcessInfo.processInfo.environment["AWS_LAMBDA_RUNTIME_API"]
             ?? "localhost:8080"
