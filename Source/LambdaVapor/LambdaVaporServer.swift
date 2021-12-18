@@ -28,13 +28,19 @@ extension LambdaHTTPRequest {
             method = HTTPMethod.DELETE
         case "connect":
             method = HTTPMethod.CONNECT
+        case "acl":
+            method = HTTPMethod.ACL
+        case "trace":
+            method = HTTPMethod.TRACE
         default:
             method = HTTPMethod.RAW(value: httpMethod.uppercased())
         }
         
         var vaporHeaders = HTTPHeaders()
         for (k, v) in headers {
-            vaporHeaders.add(name: k, value: v)
+            if multiValueHeaders[k] == nil {
+                vaporHeaders.add(name: k, value: v)
+            }
         }
         for (k, l) in multiValueHeaders {
             l.forEach {
@@ -50,7 +56,9 @@ extension LambdaHTTPRequest {
         
         var qItems: [URLQueryItem] = []
         for (k, v) in queryStringParameters {
-            qItems.append(URLQueryItem(name: k, value: v))
+            if multiValueQueryStringParameters[k] == nil {
+                qItems.append(URLQueryItem(name: k, value: v))
+            }
         }
         for (k, l) in multiValueQueryStringParameters {
             l.forEach {
@@ -135,7 +143,6 @@ public class LambdaVaporServer: Server, LambdaApiGatewayHandler {
 
 
 extension Response {
-    
     
     var toLambdaResponse: LambdaHTTPResponse {
         var h: [String : [String]] = [:]

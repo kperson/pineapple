@@ -79,7 +79,6 @@ public class LambdaApiGatewayAdapter: LambdaAppEventHandler {
                 LambdaHTTPRequestBuilder.self,
                 from: event.payload.body
             ).build()
-            print(request)
             handler.handleRequest(.init(event: event, request: request))
         }
         catch let e {
