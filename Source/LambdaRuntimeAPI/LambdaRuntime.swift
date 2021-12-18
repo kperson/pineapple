@@ -258,7 +258,7 @@ public class LambdaRuntime: Runtime {
                 body: data,
                 headers: ["Content-Type": "application/vnd.aws.lambda.error+json"]
             ) { res, err in
-                self.next()
+                self.stop()
             }
         }
     }

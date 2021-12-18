@@ -13,7 +13,8 @@ let package = Package(
         .library(name: "LambdaApiGateway", targets: ["LambdaApiGateway"])
     ],
     dependencies: [
-        .package(url: "https://github.com/vapor/vapor.git", .upToNextMajor(from: "4.54.0"))
+        .package(url: "https://github.com/vapor/vapor.git", .upToNextMajor(from: "4.54.0")),
+        .package(url: "https://github.com/soto-project/soto.git", .upToNextMajor(from: "5.11.0"))
     ],
     targets: [
         .target(
@@ -41,6 +42,15 @@ let package = Package(
                 "LambdaApiGateway"
             ],
             path: "./Source/LambdaVapor"
+        ),
+        .target(
+            name: "LambaProxyRuntimeAPI",
+            dependencies: [
+                "LambdaVapor",
+                "LambdaApiGateway",
+                .product(name: "SotoDynamoDB", package: "soto")
+            ],
+            path: "./Source/LambaProxyRuntimeAPI"
         ),
         .target(
             name: "LambdaVaporDemo",
