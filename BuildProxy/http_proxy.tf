@@ -55,5 +55,5 @@ module "proxy" {
   authorization        = "NONE"
   api_id               = aws_api_gateway_rest_api.http-test.id
   api_root_resource_id = aws_api_gateway_rest_api.http-test.root_resource_id
-  command              = "/LambaProxyRuntimeAPI"
+  command              = ["/LambaProxyRuntimeAPI"]
 }
