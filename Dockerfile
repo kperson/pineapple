@@ -19,4 +19,5 @@ ENTRYPOINT ["/bash-entry.sh"]
 # Copy just the executable into the container
 WORKDIR /
 COPY --from=build /code/.lambda-build/release/LambdaVaporDemo /LambdaVaporDemo
+COPY --from=build /code/.lambda-build/release/LambaProxyRuntimeAPI /LambaProxyRuntimeAPI
 CMD ["/LambdaVaporDemo"]
