@@ -53,7 +53,7 @@ module "proxy" {
   function_name        = "lambda_local_proxy"
   stage_name           = "default"
   authorization        = "NONE"
-  api_id               = aws_api_gateway_rest_api.http-test.id
-  api_root_resource_id = aws_api_gateway_rest_api.http-test.root_resource_id
+  api_id               = aws_api_gateway_rest_api.proxy.id
+  api_root_resource_id = aws_api_gateway_rest_api.proxy.root_resource_id
   command              = ["/LambaProxyRuntimeAPI"]
 }
