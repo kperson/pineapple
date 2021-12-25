@@ -5,7 +5,7 @@ import LambdaRuntimeAPI
 import LambdaApiGateway
 import SotoDynamoDB
 
-//let app = try Application(.detect())
+let app = try Application(.detect())
 //
 //let client = AWSClient(httpClientProvider: .createNew)
 //let dynamo = DynamoDB(client: client, endpoint: "http://localhost:8000")
@@ -38,7 +38,7 @@ app.post(":key", "2018-06-01", "runtime", "init", "error") { req -> String in
     return namespaceKey
 }
 
-try app.run()
+//try app.run()
 
 
 let gatewayAdapater = LambdaVaporServer.gatewayFrom(application: app)
