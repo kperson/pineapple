@@ -50,7 +50,7 @@ app.post(":namespaceKey", "2018-06-01", "runtime", "invocation", ":requestId", "
     
     // save and complete response
     try await repo.save(event: newEvent)
-    return Response(status: .noContent, version: .http1_1, headers: HTTPHeaders(), body: .init(string: ""))
+    return Response.noContent
 }
 
 app.post(":namespaceKey", "2018-06-01", "runtime", "invocation", ":requestId", "error") { req async throws -> String in
@@ -63,6 +63,17 @@ app.post(":namespaceKey", "2018-06-01", "runtime", "invocation", ":requestId", "
 app.post(":namespaceKey", "2018-06-01", "runtime", "init", "error") { req -> String in
     let namespaceKey = req.parameters.get("key")!
     return namespaceKey
+}
+
+extension Response {
+    
+    public static let noContent: Response = Response(
+        status: .noContent,
+        version: .http1_1,
+        headers: HTTPHeaders(),
+        body: .init(string: "")
+    )
+    
 }
 
 //app.post("event") { req -> String in
