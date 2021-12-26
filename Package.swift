@@ -1,10 +1,10 @@
-// swift-tools-version:5.3.0
+// swift-tools-version:5.5
 import PackageDescription
 
 let package = Package(
     name: "pineapple",
     platforms: [
-        .macOS(.v10_15)
+        .macOS(.v12)
     ],
     products: [
         .library(name: "LambdaRuntimeAPI", targets: ["LambdaRuntimeAPI"]),
@@ -60,5 +60,6 @@ let package = Package(
             ],
             path: "./Source/LambdaVaporDemo"
         )
-    ]
+    ],
+    swiftLanguageVersions: [.v5]
 )

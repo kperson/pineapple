@@ -10,12 +10,12 @@ import Darwin.C
 #endif
 
 
-public struct LambdaPayload {
+public struct LambdaPayload: Codable {
     
     public let body: Data
-    public let headers: [String : Any]
+    public let headers: [String : String]
     
-    public init(body: Data, headers: [String : Any]) {
+    public init(body: Data, headers: [String : String]) {
         self.body = body
         self.headers = headers
     }
@@ -70,22 +70,6 @@ public class LambdaEvent {
             runTime.sendResponse(requestId: requestId, data: data)
         }
     }
-    
-    public func sendResponse(data: String, encoding: String.Encoding = .utf8) {
-        if !isComplete {
-            isComplete = true
-            let bytes = data.data(using: encoding) ?? Data()
-            runTime.sendResponse(requestId: requestId, data: bytes)
-        }
-    }
-    
-    public func sendResponse(data: [String : Any], encoding: String.Encoding = .utf8) {
-        if !isComplete {
-            isComplete = true
-            let bytes = try? JSONSerialization.data(withJSONObject: data, options: [])
-            runTime.sendResponse(requestId: requestId, data: bytes ?? Data())
-        }
-    }
 
     public func sendInitializationError(error: LambdaError) {
         if !isComplete {
@@ -101,6 +85,20 @@ public class LambdaEvent {
         }
     }
 
+}
+
+public extension LambdaEvent {
+    
+    func sendResponse(data: String, encoding: String.Encoding = .utf8) {
+        let bytes = data.data(using: encoding) ?? Data()
+        sendResponse(data: bytes)
+    }
+    
+    func sendResponse(data: [String : Any], encoding: String.Encoding = .utf8) {
+        let bytes = try? JSONSerialization.data(withJSONObject: data, options: [])
+        sendResponse(data: bytes ?? Data())
+    }
+    
 }
 
 public protocol LambdaEventHandler: AnyObject {
@@ -132,9 +130,9 @@ public struct LambdaRequestResponse {
     
     public let statusCode: Int
     public let body: Data
-    public let headers: [String : Any]
+    public let headers: [String : String]
     
-    public init(statusCode: Int, body: Data, headers: [String : Any]) {
+    public init(statusCode: Int, body: Data, headers: [String : String]) {
         self.statusCode = statusCode
         self.body = body
         self.headers = headers
@@ -214,7 +212,7 @@ public class LambdaRuntime: Runtime {
                 headers: [:]
             ) { res, err in
                 if  let r = res,
-                    let requestId = r.headers["Lambda-Runtime-Aws-Request-Id".lowercased()] as? String {
+                    let requestId = r.headers["Lambda-Runtime-Aws-Request-Id".lowercased()] {
                     let payload = LambdaPayload(body: r.body, headers: r.headers)
                     let event = LambdaEvent(requestId: requestId, payload: payload, runTime: self)
                     handler.handleEvent(event)
@@ -245,7 +243,7 @@ public class LambdaRuntime: Runtime {
                 body: data,
                 headers: ["Content-Type": "application/vnd.aws.lambda.error+json"]
             ) { res, err in
-                self.next()
+                self.stop()
             }
         }
     }
@@ -258,7 +256,7 @@ public class LambdaRuntime: Runtime {
                 body: data,
                 headers: ["Content-Type": "application/vnd.aws.lambda.error+json"]
             ) { res, err in
-                self.stop()
+                self.next()
             }
         }
     }
@@ -289,10 +287,11 @@ public class LambdaRuntime: Runtime {
             }
             else {
                 let httpResponse = response as! HTTPURLResponse
-                var responseHeaders: [String : Any] = [:]
-                for (headerKey, headerValue) in httpResponse.allHeaderFields {
+                var responseHeaders: [String : String] = [:]
+                let allHeaders = httpResponse.allHeaderFields
+                for headerKey in allHeaders.keys {
                     if let key = headerKey as? String {
-                        responseHeaders[key.lowercased()] = headerValue
+                        responseHeaders[key.lowercased()] = httpResponse.value(forHTTPHeaderField: key)
                     }
                 }
                 let res = LambdaRequestResponse(
