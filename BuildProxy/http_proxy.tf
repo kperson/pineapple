@@ -38,6 +38,18 @@ module "lambda_proxy_events" {
   ]
 }
 
+
+module "dynamo_lambda_proxy_events_policy" {
+  source    = "github.com/kperson/terraform-modules//dynamo-crud-policy"
+  table_arn = module.lambda_proxy_events.arn
+}
+
+module "dynamo_lambda_proxy_events_role_attachment" {
+  source     = "github.com/kperson/terraform-modules//aws_role_attachment"
+  role       = aws_iam_role.lambda.name
+  policy_arn = module.lambda_proxy_events.arn
+}
+
 module "proxy" {
   source        = "./http-lambda"
   image_uri     = "pineapple"
@@ -46,7 +58,8 @@ module "proxy" {
   ecr_repo_name = "pineapple-proxy"
 
   env = {
-    MY_HANDLER = "com.kperson.http"
+    RUN_AS_LAMBDA = "1",
+    DYNAMO_TABLE  = module.lambda_proxy_events.id
   }
 
   role                 = module.lambda_role_arn.out

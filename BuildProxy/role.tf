@@ -44,6 +44,6 @@ module "log_role_attatchment" {
 #hack, we need to wait until the attachements are complete
 module "lambda_role_arn" {
   source = "github.com/kperson/terraform-modules//echo"
-  in     = [module.log_role_attatchment.role]
+  in     = [module.log_role_attatchment.role, module.dynamo_lambda_proxy_events_role_attachment.role]
   out    = aws_iam_role.lambda.arn
 }
