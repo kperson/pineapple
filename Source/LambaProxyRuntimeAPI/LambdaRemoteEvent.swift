@@ -1,4 +1,5 @@
 import LambdaRuntimeAPI
+import Vapor
 
 protocol AutoCopy {}
 
@@ -13,7 +14,7 @@ enum LambdaRemoteResponse: Codable {
 typealias LambdaRemoteRequest = LambdaPayload
 
 
-struct LambdaRemoteEvent: Codable, AutoCopy {
+struct LambdaRemoteEvent: Codable, AutoCopy, Content {
 
     let requestId: String
     let namespaceKey: String
