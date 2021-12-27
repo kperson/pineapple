@@ -47,7 +47,7 @@ module "dynamo_lambda_proxy_events_policy" {
 module "dynamo_lambda_proxy_events_role_attachment" {
   source     = "github.com/kperson/terraform-modules//aws_role_attachment"
   role       = aws_iam_role.lambda.name
-  policy_arn = module.lambda_proxy_events.arn
+  policy_arn = module.dynamo_lambda_proxy_events_policy.arn
 }
 
 module "proxy" {
