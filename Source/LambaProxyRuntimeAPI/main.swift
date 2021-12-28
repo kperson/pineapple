@@ -18,8 +18,16 @@ let app = try Application(.detect())
 
 app.get(":namespaceKey", "2018-06-01", "runtime", "invocation", "next") { req async throws -> Response in
     let namespaceKey = try req.parameters.require("namespaceKey")
-    // fetch event
-    guard let next = try await repo.getNext(namespaceKey: namespaceKey) else { throw Abort(.notFound) }
+    // fetch event    
+    let nextOpt = try await Async.retryOptional(
+        seconds: 0.5,
+        delayIncrease: 1.1,
+        maxAttempts: 14
+        
+    ) {
+        try await repo.getNext(namespaceKey: namespaceKey)
+    }
+    guard let next = nextOpt else { throw Abort(.notFound) }
     
     // create raw response
     var headers = HTTPHeaders()
@@ -27,8 +35,9 @@ app.get(":namespaceKey", "2018-06-01", "runtime", "invocation", "next") { req as
         headers.add(name: headerKey, value: headerValue)
     }
     if !headers.contains(name: "Lambda-Runtime-Aws-Request-Id") {
-        headers.add(name: "Lambda-Runtime-Aws-Request-Id", value: next.requestId)
+        headers.remove(name: "Lambda-Runtime-Aws-Request-Id")
     }
+    headers.add(name: "Lambda-Runtime-Aws-Request-Id", value: next.requestId)
     
     return Response(status: .ok, version: .http1_1, headers: headers, body: .init(data: next.request.body))
 }
