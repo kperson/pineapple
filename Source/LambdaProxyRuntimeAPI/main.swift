@@ -16,15 +16,16 @@ let dynamo = DynamoDB(client: client)
 let repo = LambdaEventRepo(dynamoDB: dynamo, table: enviroment["DYNAMO_TABLE"] ?? "lambda_proxy")
 let app = try Application(.detect())
 
+// partially applied so margic numbers aren't all over the place
+func retry<T>(
+    _ f: () async throws -> T?) async rethrows -> T? {
+    return try await Async.retryOptional(seconds: 0.5, delayIncrease: 1.1, maxAttempts: 14, f)
+}
+
 app.get(":namespaceKey", "2018-06-01", "runtime", "invocation", "next") { req async throws -> Response in
     let namespaceKey = try req.parameters.require("namespaceKey")
     // fetch event    
-    let nextOpt = try await Async.retryOptional(
-        seconds: 0.5,
-        delayIncrease: 1.1,
-        maxAttempts: 14
-        
-    ) {
+    let nextOpt = try await retry {
         try await repo.getNext(namespaceKey: namespaceKey)
     }
     guard let next = nextOpt else { throw Abort(.notFound) }
@@ -125,6 +126,7 @@ app.get("event", ":requestId") { req async throws -> LambdaRemoteEvent in
 
 app.post("event") { req async throws -> LambdaRemoteEvent in
     // submit an event to be processed
+    let expiresAt = Int64(Date().timeIntervalSince1970 + 60 * 15) // 15 minutes
     let post = try req.content.decode(LambdaRemoteEventPost.self)
     let payloadCreatedAt = Int64(Date().timeIntervalSince1970)
     let event = LambdaRemoteEvent(
@@ -132,7 +134,8 @@ app.post("event") { req async throws -> LambdaRemoteEvent in
         namespaceKey: post.namespaceKey,
         payloadCreatedAt: payloadCreatedAt,
         request: post.request,
-        response: nil
+        response: nil,
+        expiresAt: expiresAt
     )
     try await repo.save(event: event)
     return event

@@ -11,6 +11,7 @@ extension LambdaRemoteEvent {
 		payloadCreatedAt: Int64,
 		request: LambdaRemoteRequest,
 		response: LambdaRemoteResponse?,
+		expiresAt: Int64,
 		// This is to prevent overriding the default init if it exists already
 		forCopyInit: Void? = nil
 	) {
@@ -19,6 +20,7 @@ extension LambdaRemoteEvent {
 		self.payloadCreatedAt = payloadCreatedAt
 		self.request = request
 		self.response = response
+		self.expiresAt = expiresAt
 	}
 
 	// struct copy, lets you overwrite specific variables retaining the value of the rest
@@ -35,6 +37,7 @@ extension LambdaRemoteEvent {
 		public var payloadCreatedAt: Int64
 		public var request: LambdaRemoteRequest
 		public var response: LambdaRemoteResponse?
+		public var expiresAt: Int64
 
 		fileprivate init(original: LambdaRemoteEvent) {
 			self.requestId = original.requestId
@@ -42,6 +45,7 @@ extension LambdaRemoteEvent {
 			self.payloadCreatedAt = original.payloadCreatedAt
 			self.request = original.request
 			self.response = original.response
+			self.expiresAt = original.expiresAt
 		}
 
 		fileprivate func toLambdaRemoteEvent() -> LambdaRemoteEvent {
@@ -50,7 +54,8 @@ extension LambdaRemoteEvent {
 				namespaceKey: namespaceKey, 
 				payloadCreatedAt: payloadCreatedAt, 
 				request: request, 
-				response: response
+				response: response, 
+				expiresAt: expiresAt
 			)
 		}
 	}

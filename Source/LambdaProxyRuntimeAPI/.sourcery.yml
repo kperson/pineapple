@@ -1,5 +1,5 @@
 sources:
-  - ../../Source/LambaProxyRuntimeAPI
+  - ../../Source
 templates:
   - ../../Sourcery
 output:

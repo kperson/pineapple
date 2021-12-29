@@ -21,5 +21,6 @@ struct LambdaRemoteEvent: Codable, AutoCopy, Content {
     let payloadCreatedAt: Int64
     let request: LambdaRemoteRequest
     let response: LambdaRemoteResponse?
+    let expiresAt: Int64
     
 }

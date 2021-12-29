@@ -12,7 +12,10 @@ module "lambda_proxy_events" {
   table_name   = format("%s_lambda_proxy_events", terraform.workspace)
   hash_key     = "namespaceKey"
   range_key    = "payloadCreatedAt"
-  billing_mode = "PAY_PER_REQUEST"
+
+  ttl_attribute = {
+    name = "expiresAt"
+  }
 
   attributes = [
     {
@@ -68,5 +71,5 @@ module "proxy" {
   authorization        = "NONE"
   api_id               = aws_api_gateway_rest_api.proxy.id
   api_root_resource_id = aws_api_gateway_rest_api.proxy.root_resource_id
-  command              = ["/LambaProxyRuntimeAPI"]
+  command              = ["/LambdaProxyRuntimeAPI"]
 }

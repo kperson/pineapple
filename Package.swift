@@ -44,13 +44,13 @@ let package = Package(
             path: "./Source/LambdaVapor"
         ),
         .target(
-            name: "LambaProxyRuntimeAPI",
+            name: "LambdaProxyRuntimeAPI",
             dependencies: [
                 "LambdaVapor",
                 "LambdaApiGateway",
                 .product(name: "SotoDynamoDB", package: "soto")
             ],
-            path: "./Source/LambaProxyRuntimeAPI"
+            path: "./Source/LambdaProxyRuntimeAPI"
         ),
         .target(
             name: "LambdaVaporDemo",

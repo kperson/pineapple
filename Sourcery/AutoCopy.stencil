@@ -1,4 +1,4 @@
-`{% for type in types.structs where type.implements.AutoCopy %}
+{% for type in types.structs where type.implements.AutoCopy %}
 {% set newFileName %}{{ type.name }}Copy{% endset %}
 
 // sourcery:file:{{ newFileName }}
