@@ -10,31 +10,33 @@ class ProxyTest: DynamoTest {
 
     let tableName = "testtable"
     private var app: Application?
+    private var isSetup = false
     
     override func setUp() async throws {
         try await super.setUp()
-        _ = try await dynamo.createTable(.init(
-            attributeDefinitions: [
-                .init(attributeName: "payloadCreatedAt", attributeType: .n),
-                .init(attributeName: "requestId", attributeType: .s),
-                .init(attributeName: "namespaceKey", attributeType: .s)
-            ],
-            globalSecondaryIndexes: [
-                .init(
-                    indexName: "requestIdIndex",
-                    keySchema: [.init(attributeName: "requestId", keyType: .hash)],
-                    projection: .init(nonKeyAttributes: nil, projectionType: .all),
-                    provisionedThroughput: .init(readCapacityUnits: 1, writeCapacityUnits: 1)
-                )
-            ],
-            keySchema: [
-                .init(attributeName: "namespaceKey", keyType: .hash),
-                .init(attributeName: "payloadCreatedAt", keyType: .range)
-            ],
-            provisionedThroughput: .init(readCapacityUnits: 1, writeCapacityUnits: 1),
-            tableName: tableName
-        ))
-        if app == nil {
+        if !isSetup {
+            isSetup = true
+            _ = try await dynamo.createTable(.init(
+                attributeDefinitions: [
+                    .init(attributeName: "payloadCreatedAt", attributeType: .n),
+                    .init(attributeName: "requestId", attributeType: .s),
+                    .init(attributeName: "namespaceKey", attributeType: .s)
+                ],
+                globalSecondaryIndexes: [
+                    .init(
+                        indexName: "requestIdIndex",
+                        keySchema: [.init(attributeName: "requestId", keyType: .hash)],
+                        projection: .init(nonKeyAttributes: nil, projectionType: .all),
+                        provisionedThroughput: .init(readCapacityUnits: 1, writeCapacityUnits: 1)
+                    )
+                ],
+                keySchema: [
+                    .init(attributeName: "namespaceKey", keyType: .hash),
+                    .init(attributeName: "payloadCreatedAt", keyType: .range)
+                ],
+                provisionedThroughput: .init(readCapacityUnits: 1, writeCapacityUnits: 1),
+                tableName: tableName
+            ))
             app = try! Application(.detect())
             let proxyApp = App(
                 vaporApp: app!,

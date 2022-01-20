@@ -10,7 +10,7 @@ import Darwin.C
 #endif
 
 
-public struct LambdaPayload: Codable {
+public struct LambdaPayload: Codable, Equatable {
     
     public let body: Data
     public let headers: [String : String]
@@ -21,7 +21,7 @@ public struct LambdaPayload: Codable {
     }
 }
 
-public struct LambdaError: Codable, Error {
+public struct LambdaError: Codable, Error, Equatable {
     
     public let errorMessage: String
     public let errorType: String?

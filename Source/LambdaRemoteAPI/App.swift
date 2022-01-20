@@ -117,12 +117,22 @@ public class App {
 
         app.get("event", ":requestId") { req async throws -> LambdaRemoteEvent in
             let requestId = try req.parameters.require("requestId")
-            guard let event = try await self.repo.getByRequestId(requestId: requestId) else {
+            let shouldLongPoll = try req.query.get(String.self, at: "shouldLongPoll") == "1"
+            let e = !shouldLongPoll
+            ? try await self.repo.getByRequestId(requestId: requestId)
+            : try await self.retry {
+                if let rs = try await self.repo.getByRequestId(requestId: requestId), rs.response != nil {
+                    return rs
+                }
+                return nil
+            }
+            
+            guard let event = e else {
                 throw Abort(.notFound)
             }
             return event
         }
-
+        
         app.post("event") { req async throws -> LambdaRemoteEvent in
             // submit an event to be processed
             let expiresAt = Int64(Date().timeIntervalSince1970 + 60 * 15) // 15 minutes
@@ -150,9 +160,8 @@ public class App {
     // partially applied so margic numbers aren't all over the place
     func retry<T>(
         _ f: () async throws -> T?) async rethrows -> T? {
-        return try await Async.retryOptional(seconds: 0.5, delayIncrease: 1.1, maxAttempts: 14, f)
+        return try await Async.retryOptional(seconds: 0.5, delayIncrease: 1.1, maxAttempts: 17, f)
     }
-
     
 }
 
@@ -167,12 +176,5 @@ extension Response {
 
 }
 
-struct LambdaRemoteEventPost: Content {
-
-    let namespaceKey: String
-    let request: LambdaRemoteRequest
-    let requestId: String
-    
-}
-
 extension LambdaRemoteEvent: Content {}
+extension LambdaRemoteEventPost: Content {}

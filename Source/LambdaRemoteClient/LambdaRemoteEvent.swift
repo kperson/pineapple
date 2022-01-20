@@ -3,7 +3,7 @@ import LambdaRuntimeAPI
 
 protocol AutoCopy {}
 
-public enum LambdaRemoteResponse: Codable {
+public enum LambdaRemoteResponse: Codable, Equatable {
     
     case response(payload: LambdaPayload)
     case invocationError(error: LambdaError)
@@ -14,7 +14,7 @@ public enum LambdaRemoteResponse: Codable {
 public typealias LambdaRemoteRequest = LambdaPayload
 
 
-public struct LambdaRemoteEvent: Codable, AutoCopy {
+public struct LambdaRemoteEvent: Codable, AutoCopy, Equatable {
 
     public let requestId: String
     public let namespaceKey: String
@@ -37,6 +37,21 @@ public struct LambdaRemoteEvent: Codable, AutoCopy {
         self.request = request
         self.response = response
         self.expiresAt = expiresAt
+    }
+    
+}
+
+
+public struct LambdaRemoteEventPost: Codable, Equatable {
+
+    public let namespaceKey: String
+    public let request: LambdaRemoteRequest
+    public let requestId: String
+    
+    public init(namespaceKey: String, request: LambdaRemoteRequest, requestId: String) {
+        self.namespaceKey = namespaceKey
+        self.request = request
+        self.requestId = requestId
     }
     
 }
