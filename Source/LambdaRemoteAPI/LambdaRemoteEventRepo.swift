@@ -1,6 +1,7 @@
 import Foundation
 import SotoDynamoDB
 import LambdaRuntimeAPI
+import LambdaRemoteClient
 
 class LambdaEventRepo {
     
