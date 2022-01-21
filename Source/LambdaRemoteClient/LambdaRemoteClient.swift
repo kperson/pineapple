@@ -1,5 +1,6 @@
 import Foundation
 import LambdaRuntimeAPI
+import AsyncHttp
 
 
 public class LambdaRemoteClient: JSONHttpClient {
