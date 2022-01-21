@@ -2,7 +2,7 @@ import XCTest
 import SotoDynamoDB
 @testable import LambdaRemoteAPI
 
-class DynamoTest: XCTestCase {
+class DynamoTestCase: XCTestCase {
     
     static let containerName = "dynamo-local-test-container"
     

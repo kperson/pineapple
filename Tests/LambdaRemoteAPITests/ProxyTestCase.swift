@@ -6,7 +6,7 @@ import AsyncHttp
 @testable import LambdaRemoteAPI
 
 
-class ProxyTest: DynamoTest {
+class ProxyTestCase: DynamoTestCase {
 
     let tableName = "testtable"
     private var app: Application?

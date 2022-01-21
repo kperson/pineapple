@@ -15,7 +15,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/vapor/vapor.git", .upToNextMajor(from: "4.54.0")),
         .package(url: "https://github.com/soto-project/soto.git", .upToNextMajor(from: "5.11.0")),
-        .package(url: "https://github.com/kperson/swift-async-http.git", .upToNextMajor(from: "1.1.1"))
+        .package(url: "https://github.com/kperson/swift-async-http.git", .upToNextMajor(from: "1.1.2"))
     ],
     targets: [
         .target(

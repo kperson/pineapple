@@ -7,7 +7,7 @@ import LambdaRuntimeAPI
 @testable import LambdaRemoteClient
 
 
-class SaveEventTests: ProxyTest {
+class APITests: ProxyTestCase {
 
     let client = LambdaRemoteClient(baseURL: "http://localhost:8080")
 
@@ -130,7 +130,7 @@ class SaveEventTests: ProxyTest {
     }
     
     func testLongPollingNil() async throws {
-        let res = try await client.nextInvocation(namespaceKey: "my-key")
+        let res = try await client.getNextInvocation(namespaceKey: "my-key")
         XCTAssertNil(res)
     }
     
@@ -139,7 +139,7 @@ class SaveEventTests: ProxyTest {
         let body = "hello_word".data(using: .utf8)!
         let exp = expectation(description: "testLongPollingResponse")
         Task {
-            let res = try await client.nextInvocation(namespaceKey: "my-key")
+            let res = try await client.getNextInvocation(namespaceKey: "my-key")
             XCTAssertEqual(res, body)
             exp.fulfill()
         }
