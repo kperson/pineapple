@@ -5,7 +5,7 @@ import AsyncHttp
 
 public class LambdaRemoteClient {
     
-    let client: JSONHttpClient
+    public let client: JSONHttpClient
     
     public init(baseURL: String) {
         client = JSONHttpClient(baseURL: baseURL)

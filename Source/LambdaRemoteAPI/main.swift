@@ -2,7 +2,6 @@ import Vapor
 import LambdaVapor
 import LambdaApp
 import LambdaRuntimeAPI
-import LambdaRemoteAPI
 import SotoDynamoDB
 import Foundation
 
