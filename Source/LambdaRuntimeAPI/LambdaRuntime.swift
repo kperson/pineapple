@@ -21,6 +21,15 @@ public struct LambdaPayload: Codable, Equatable {
     }
 }
 
+public struct LambdaSuccessPayload: Codable, Equatable {
+    
+    public let body: Data
+    
+    public init(body: Data) {
+        self.body = body
+    }
+}
+
 public struct LambdaError: Codable, Error, Equatable {
     
     public let errorMessage: String

@@ -1,18 +1,15 @@
 import Foundation
 import LambdaRuntimeAPI
+import LambdaApp
+
 
 protocol AutoCopy {}
 
-public enum LambdaRemoteResponse: Codable, Equatable {
-    
-    case response(payload: LambdaPayload)
-    case invocationError(error: LambdaError)
-    case initializationError(error: LambdaError)
 
-}
 
 public typealias LambdaRemoteRequest = LambdaPayload
 
+public typealias LambdaRemoteResponse = LambdaResponse
 
 public struct LambdaRemoteEvent: Codable, AutoCopy, Equatable {
 
@@ -28,7 +25,7 @@ public struct LambdaRemoteEvent: Codable, AutoCopy, Equatable {
         namespaceKey: String,
         payloadCreatedAt: Int64,
         request: LambdaRemoteRequest,
-        response: LambdaRemoteResponse?,
+        response: LambdaResponse?,
         expiresAt: Int64
     ) {
         self.requestId = requestId

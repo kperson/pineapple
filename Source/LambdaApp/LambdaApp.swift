@@ -7,6 +7,14 @@ public protocol LambdaAppEventHandler {
     
 }
 
+public enum LambdaResponse: Codable, Equatable {
+    
+    case response(payload: LambdaSuccessPayload)
+    case invocationError(error: LambdaError)
+    case initializationError(error: LambdaError)
+
+}
+
 public class LambdaApp: LambdaEventHandler {
     
     private class LambdaRuntimeLogHandlerWrapper: LambdaRuntimeLogHandler {
@@ -40,7 +48,7 @@ public class LambdaApp: LambdaEventHandler {
         }
     }
     
-    convenience public init(singleHandler: @escaping (LambdaEvent) -> Void) {
+    convenience public init(_ singleHandler: @escaping (LambdaEvent) -> Void) {
         let defaultKey = "_DEFAULT_HANDLER_LAMBDA_APP_SWIFT"
         self.init { _ in
             defaultKey
@@ -49,11 +57,26 @@ public class LambdaApp: LambdaEventHandler {
     }
     
     convenience public init(singleHandler: LambdaAppEventHandler) {
-        self.init(singleHandler: singleHandler.handleEvent)
+        self.init(singleHandler.handleEvent)
     }
     
     public func addHandler(_ handlerKey: String, _ handler: @escaping (LambdaEvent) -> Void) {
         handlers[handlerKey] = handler
+    }
+    
+    public func addHandler(_ handlerKey: String, _ handler: @escaping (LambdaEvent) async throws -> LambdaResponse) {
+        let h: (LambdaEvent) -> Void = { e in
+            Task {
+                let rs = try await handler(e)
+                switch rs {
+                case .response(payload: let r): e.sendResponse(data: r.body)
+                case .invocationError(error: let err): e.sendInvocationError(error: err)
+                case .initializationError(error: let err): e.sendInitializationError(error: err)
+                }
+                
+            }
+        }
+        handlers[handlerKey] = h
     }
     
     public func addHandler(_ handlerKey: String, _ handler: LambdaAppEventHandler) {

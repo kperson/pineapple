@@ -11,7 +11,7 @@ let package = Package(
         .library(name: "LambdaApp", targets: ["LambdaApp"]),
         .library(name: "LambdaVapor", targets: ["LambdaVapor"]),
         .library(name: "LambdaApiGateway", targets: ["LambdaApiGateway"]),
-        .library(name: "LambdaRemoteClient", targets: ["LambdaRemoteClient"])
+        .library(name: "LambdaRemoteProxy", targets: ["LambdaRemoteProxy"])
     ],
     dependencies: [
         .package(url: "https://github.com/vapor/vapor.git", .upToNextMajor(from: "4.54.0")),
@@ -48,7 +48,7 @@ let package = Package(
         .target(
             name: "LambdaRemoteClient",
             dependencies: [
-                "LambdaRuntimeAPI",
+                "LambdaApp",
                 .product(name: "AsyncHttp", package: "swift-async-http")
             ],
             path: "./Source/LambdaRemoteClient"
@@ -62,6 +62,14 @@ let package = Package(
                 .product(name: "SotoDynamoDB", package: "soto")
             ],
             path: "./Source/LambdaRemoteAPI"
+        ),
+        .executableTarget(
+            name: "LambdaRemoteProxy",
+            dependencies: [
+                "LambdaApp",
+                "LambdaRemoteClient"
+            ],
+            path: "./Source/LambdaRemoteProxy"
         ),
         .testTarget(
             name: "LambdaRemoteAPITests",

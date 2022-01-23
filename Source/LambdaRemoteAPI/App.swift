@@ -54,7 +54,7 @@ public class App {
             
             // create a new event
             let newEvent = event.copy {
-                $0.response = .response(payload: LambdaPayload(body: lambdaData, headers: [:]))
+                $0.response = .response(payload: LambdaSuccessPayload(body: lambdaData))
             }
             
             // save and complete response
