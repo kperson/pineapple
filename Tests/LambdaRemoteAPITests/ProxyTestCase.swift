@@ -15,7 +15,7 @@ class ProxyTestCase: DynamoTestCase {
     override func setUp() async throws {
         try await super.setUp()
         if !isSetup {
-            isSetup = true
+            isSetup = true            
             _ = try await dynamo.createTable(.init(
                 attributeDefinitions: [
                     .init(attributeName: "payloadCreatedAt", attributeType: .n),

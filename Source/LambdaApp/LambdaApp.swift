@@ -42,22 +42,25 @@ public class LambdaApp: LambdaEventHandler {
         self.runtime.eventHandler = self
     }
     
-    convenience public init(enviromentVariable: String = "_HANDLER") {
-        self.init { _ in
+    convenience public init(
+        runtime: Runtime = LambdaRuntime(),
+        enviromentVariable: String = "_HANDLER"
+    ) {
+        self.init(runtime: runtime) { _ in
             ProcessInfo.processInfo.environment[enviromentVariable]
         }
     }
     
-    convenience public init(_ singleHandler: @escaping (LambdaEvent) -> Void) {
+    convenience public init(runtime: Runtime = LambdaRuntime(), _ singleHandler: @escaping (LambdaEvent) -> Void) {
         let defaultKey = "_DEFAULT_HANDLER_LAMBDA_APP_SWIFT"
-        self.init { _ in
+        self.init(runtime: runtime) { _ in
             defaultKey
         }
         handlers[defaultKey] = singleHandler
     }
     
-    convenience public init(singleHandler: LambdaAppEventHandler) {
-        self.init(singleHandler.handleEvent)
+    convenience public init(runtime: Runtime = LambdaRuntime(), singleHandler: LambdaAppEventHandler) {
+        self.init(runtime: runtime, singleHandler.handleEvent)
     }
     
     public func addHandler(_ handlerKey: String, _ handler: @escaping (LambdaEvent) -> Void) {

@@ -5,7 +5,17 @@ import LambdaRemoteClient
 
 public class LambdaRemoteProxy {
     
-    class func createLambdaApp(namespaceKey: String, remoteAPIBaseURL: String) -> LambdaApp {
+    public class func setupProxy(
+        namespaceKey: String?,
+        remoteAPIBaseURL: String?
+    ) -> LambdaApp? {
+        if let n = namespaceKey, let r = remoteAPIBaseURL {
+            return createLambdaApp(namespaceKey: n, remoteAPIBaseURL: r)
+        }
+        return nil
+    }
+    
+    public class func createLambdaApp(namespaceKey: String, remoteAPIBaseURL: String) -> LambdaApp {
         let client = LambdaRemoteClient(baseURL: remoteAPIBaseURL)
         return LambdaApp { (event: LambdaEvent) -> Void in
             let post = LambdaRemoteEventPost(

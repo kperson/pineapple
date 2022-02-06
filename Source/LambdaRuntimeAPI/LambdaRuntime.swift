@@ -15,7 +15,7 @@ public struct LambdaPayload: Codable, Equatable {
     public let body: Data
     public let headers: [String : String]
     
-    public init(body: Data, headers: [String : String]) {
+    public init(body: Data = Data(), headers: [String : String] = [:]) {
         self.body = body
         self.headers = headers
     }
@@ -279,7 +279,13 @@ public class LambdaRuntime: Runtime {
         callback: @escaping (LambdaRequestResponse?, Error?) -> Void
     ) {
         logHandler?.handleRuntimeLog(.requestStarted(path: path))
-        let urlStr = "http://\(runtimeAPI)/\(path)"
+        let urlStr: String
+        if runtimeAPI.starts(with: "http://") || runtimeAPI.starts(with: "https://") {
+            urlStr = "\(runtimeAPI)/\(path)"
+        }
+        else {
+            urlStr = "http://\(runtimeAPI)/\(path)"
+        }
         var request = URLRequest(
             url: URL(string: urlStr)!,
             cachePolicy: .useProtocolCachePolicy,

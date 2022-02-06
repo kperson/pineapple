@@ -20,8 +20,8 @@ public class App {
         app.get(":namespaceKey", "2018-06-01", "runtime", "invocation", "next") { req async throws -> Response in
             let namespaceKey = try req.parameters.require("namespaceKey")
             // fetch event
-            let nextOpt = try await self.retry {
-                try await self.repo.getNext(namespaceKey: namespaceKey)
+            let nextOpt: LambdaRemoteEvent? = try await self.retry { 
+                return try await self.repo.getNext(namespaceKey: namespaceKey)
             }
             guard let next = nextOpt else { throw Abort(.notFound) }
             

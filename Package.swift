@@ -63,7 +63,7 @@ let package = Package(
             ],
             path: "./Source/LambdaRemoteAPI"
         ),
-        .executableTarget(
+        .target(
             name: "LambdaRemoteProxy",
             dependencies: [
                 "LambdaApp",
@@ -82,7 +82,8 @@ let package = Package(
             name: "LambdaVaporDemo",
             dependencies: [
                 "LambdaVapor",
-                "LambdaApiGateway"
+                "LambdaApiGateway",
+                "LambdaRemoteProxy"
             ],
             path: "./Source/LambdaVaporDemo"
         )
