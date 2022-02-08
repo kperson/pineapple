@@ -40,6 +40,7 @@ public class LambdaRemoteProxy {
                     else {
                         event.sendInvocationError(error: .init(errorMessage: "remote timeout"))
                     }
+                    try await client.deleteEvent(requestId: savedEvent.requestId)
                 }
                 catch let error {
                     event.sendInvocationError(error: LambdaError(error: error))

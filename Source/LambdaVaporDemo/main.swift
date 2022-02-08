@@ -6,13 +6,15 @@ import LambdaApiGateway
 import LambdaRemoteProxy
 
 let enviroment = ProcessInfo.processInfo.environment
-let shouldProxyRequest = enviroment["SHOULD_PROXY_REQUEST"] == "1"
 let shouldRunAsLambda = enviroment["RUN_AS_LAMBDA"] == "1"
+let shouldProxyRequest = shouldRunAsLambda && enviroment["SHOULD_PROXY_REQUEST"] == "1"
 
-// Run this on AWS only, this just sends remote request to a local client
+// Run this on AWS only
+// this sends actual lambda requests to a local dev env or testing env
 if let proxyApp = LambdaRemoteProxy.setupProxy(
     namespaceKey: enviroment["PROXY_NAMESPACE_KEY"],
     remoteAPIBaseURL: enviroment["PROXY_BASE_URL"]), shouldProxyRequest {
+    print("Proxying Request locally")
     proxyApp.runtime.start()
 }
 else {
@@ -20,7 +22,7 @@ else {
     let app = try Application(.detect())
     
     struct User: Content {
-        let name: [String]
+        let name: String
     }
 
     //form-data, x-www-form-urlencoded, json
@@ -35,6 +37,7 @@ else {
     }
 
     if shouldRunAsLambda {
+        print("Running As Lambda")
         let gatewayAdapater = LambdaVaporServer.gatewayFrom(application: app)
         lambdaApp.addHandler("com.kperson.http", gatewayAdapater)
         lambdaApp.runtime.start()

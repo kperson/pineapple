@@ -27,13 +27,16 @@ class LambdaEventRepo {
     }
     
     func getNext(namespaceKey: String) async throws -> LambdaRemoteEvent? {
+        // filter occur after query, we keep the limit high right now
+        // this should be a index query with response, this is technically not correct
+        // but will work for now
         return try await dynamoDB.query(
             .init(
                 expressionAttributeNames: ["#response" : "response"],
                 expressionAttributeValues: [":namespaceKey" : .s(namespaceKey)],
                 filterExpression: "attribute_not_exists(#response)",
                 keyConditionExpression: "namespaceKey = :namespaceKey",
-                limit: 1,
+                limit: 30,
                 scanIndexForward: true,
                 tableName: table
             ),

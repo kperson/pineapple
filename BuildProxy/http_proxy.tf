@@ -8,10 +8,10 @@ resource "aws_api_gateway_rest_api" "proxy" {
 }
 
 module "lambda_proxy_events" {
-  source       = "github.com/kperson/terraform-modules//auto-scaled-dynamo"
-  table_name   = format("%s_lambda_proxy_events", terraform.workspace)
-  hash_key     = "namespaceKey"
-  range_key    = "payloadCreatedAt"
+  source     = "github.com/kperson/terraform-modules//auto-scaled-dynamo"
+  table_name = format("%s_lambda_proxy_events", terraform.workspace)
+  hash_key   = "namespaceKey"
+  range_key  = "payloadCreatedAt"
 
   ttl_attribute = {
     name = "expiresAt"

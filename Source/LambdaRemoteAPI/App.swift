@@ -30,11 +30,10 @@ public class App {
             for (headerKey, headerValue) in next.request.headers {
                 headers.add(name: headerKey, value: headerValue)
             }
-            if !headers.contains(name: "Lambda-Runtime-Aws-Request-Id") {
+            if headers.contains(name: "Lambda-Runtime-Aws-Request-Id") {
                 headers.remove(name: "Lambda-Runtime-Aws-Request-Id")
             }
             headers.add(name: "Lambda-Runtime-Aws-Request-Id", value: next.requestId)
-            
             return Response(status: .ok, version: .http1_1, headers: headers, body: .init(data: next.request.body))
         }
 
