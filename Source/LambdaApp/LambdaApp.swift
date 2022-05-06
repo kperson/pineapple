@@ -15,6 +15,12 @@ public enum LambdaResponse: Codable, Equatable {
 
 }
 
+/**
+ LambdaApp is a collection of event handlers for a give project.
+ For exammple, you could have a event handler for SQL, API Gateway, and a Dynamo stream.
+ All of these handlers would be store in the LambdaApp.
+ The LambdaApp decides which handler to invoke based off the execution parameters, such as environment variables.
+ */
 public class LambdaApp: LambdaEventHandler {
     
     private class LambdaRuntimeLogHandlerWrapper: LambdaRuntimeLogHandler {

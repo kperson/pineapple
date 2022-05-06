@@ -67,7 +67,7 @@ public class LambdaEvent {
     
     let runTime: LambdaRuntime
     
-    init(requestId: String, payload: LambdaPayload, runTime: LambdaRuntime) {
+    public init(requestId: String, payload: LambdaPayload, runTime: LambdaRuntime) {
         self.requestId = requestId
         self.payload = payload
         self.runTime = runTime

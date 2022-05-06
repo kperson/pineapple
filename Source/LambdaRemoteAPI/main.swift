@@ -19,7 +19,6 @@ let table = enviroment["DYNAMO_TABLE"] ?? "lambda_proxy"
 let proxyApp = LambdaRemoteAPI.App(vaporApp: app, dynamo: dynamo, port: 8080, table: table)
 proxyApp.configureRoutes()
 
-
 if enviroment["RUN_AS_LAMBDA"] == "1" {
     let gatewayAdapater = LambdaVaporServer.gatewayFrom(application: app)
     let lambdaApp = LambdaApp(singleHandler: gatewayAdapater)
@@ -28,5 +27,3 @@ if enviroment["RUN_AS_LAMBDA"] == "1" {
 else {
     try app.run()
 }
-
-

@@ -1,9 +1,9 @@
 import Foundation
 import Vapor
-import LambdaApiGateway
+import LambdaApp
 import NIOPosix
 
-extension LambdaHTTPRequest {
+extension HTTPRequest {
     
     func vaporRequest(
         eventLoopGroup: EventLoopGroup,
@@ -91,7 +91,8 @@ extension LambdaHTTPRequest {
     
 }
 
-public class LambdaVaporServer: Server, LambdaApiGatewayHandler {
+// TODO: move this to a new project, Vapor is not part of the core
+public class LambdaVaporServer: Server, ApiGatewayHandler {
  
     private let application: Application
     private var shutdownPromise: EventLoopPromise<Void>
@@ -104,8 +105,8 @@ public class LambdaVaporServer: Server, LambdaApiGatewayHandler {
         self.shutdownPromise = LambdaVaporServer.group.next().makePromise(of: Void.self)
     }
     
-    public static func gatewayFrom(application: Application) -> LambdaApiGatewayAdapter {
-        return LambdaApiGatewayAdapter(LambdaVaporServer(application: application))
+    public static func gatewayFrom(application: Application) -> ApiGatewayEventHandler {
+        return ApiGatewayEventHandler(LambdaVaporServer(application: application))
     }
     
     // MARK: Server
@@ -125,26 +126,28 @@ public class LambdaVaporServer: Server, LambdaApiGatewayHandler {
         
     // MARK: LambdaApiGatewayHandler
     
-    public func handleRequest(_ requestEvent: LambdaHttpEvent) -> Void {
-        let vaporRequest = requestEvent.request.vaporRequest(
+    public func handleRequest(_ requestEvent: HTTPRequest) async throws -> HTTPResponse {
+        let vaporRequest = requestEvent.vaporRequest(
             eventLoopGroup: Self.group,
             application: application
         )
         let future = responder.respond(to: vaporRequest)
-        future.whenSuccess { response in
-            requestEvent.sendResponse(response: response.toLambdaResponse)
+        return try await withUnsafeThrowingContinuation { cont in
+            future.whenSuccess { response in
+                cont.resume(returning: response.toLambdaResponse)
+            }
+            future.whenFailure { err in
+                cont.resume(throwing: err)
+            }
         }
-        future.whenFailure { err in
-            requestEvent.sendError(error: err)
-        }
-     
+    
     }
 }
 
 
 extension Response {
     
-    var toLambdaResponse: LambdaHTTPResponse {
+    var toLambdaResponse: HTTPResponse {
         var h: [String : [String]] = [:]
         for (k, v) in headers {
             if let l = h[k] {
@@ -165,7 +168,7 @@ extension Response {
             }
         }
         
-        return LambdaHTTPResponse(
+        return HTTPResponse(
             statusCode: Int(status.code),
             body: body.data,
             headers: sHeaders,

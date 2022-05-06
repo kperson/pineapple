@@ -24,13 +24,13 @@ public struct LambdaHTTPRequestBuilder: Codable {
         return p.starts(with: "/") ? p : "/\(p)"
     }
     
-    func build() -> LambdaHTTPRequest {
+    func build() -> HTTPRequest {
         let finalBody = body.flatMap { b in
             isBase64Encoded
             ? Data(base64Encoded: b)
             : b.data(using: .utf8)
         } ?? Data()
-        return LambdaHTTPRequest(
+        return HTTPRequest(
             httpMethod: httpMethod,
             path: path,
             headers: headers ?? [:],
@@ -43,7 +43,7 @@ public struct LambdaHTTPRequestBuilder: Codable {
     
 }
 
-public struct LambdaHTTPRequest {
+public struct HTTPRequest {
 
     public let httpMethod: String
     public let path: String

@@ -10,7 +10,6 @@ let package = Package(
         .library(name: "LambdaRuntimeAPI", targets: ["LambdaRuntimeAPI"]),
         .library(name: "LambdaApp", targets: ["LambdaApp"]),
         .library(name: "LambdaVapor", targets: ["LambdaVapor"]),
-        .library(name: "LambdaApiGateway", targets: ["LambdaApiGateway"]),
         .library(name: "LambdaRemoteProxy", targets: ["LambdaRemoteProxy"])
     ],
     dependencies: [
@@ -29,19 +28,12 @@ let package = Package(
                 "LambdaRuntimeAPI"
             ],
             path: "./Source/LambdaApp"
-        ),        
-        .target(
-            name: "LambdaApiGateway",
-            dependencies: [
-                "LambdaApp"
-            ],
-            path: "./Source/LambdaApiGateway"
         ),
         .target(
             name: "LambdaVapor",
             dependencies: [
                 .product(name: "Vapor", package: "vapor"),
-                "LambdaApiGateway"
+                "LambdaApp"
             ],
             path: "./Source/LambdaVapor"
         ),
@@ -57,7 +49,7 @@ let package = Package(
             name: "LambdaRemoteAPI",
             dependencies: [
                 "LambdaVapor",
-                "LambdaApiGateway",
+                "LambdaApp",
                 "LambdaRemoteClient",
                 .product(name: "SotoDynamoDB", package: "soto")
             ],
@@ -82,7 +74,7 @@ let package = Package(
             name: "LambdaVaporDemo",
             dependencies: [
                 "LambdaVapor",
-                "LambdaApiGateway",
+                "LambdaApp",
                 "LambdaRemoteProxy"
             ],
             path: "./Source/LambdaVaporDemo"

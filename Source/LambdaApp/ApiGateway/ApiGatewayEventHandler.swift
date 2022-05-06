@@ -1,10 +1,9 @@
-import LambdaApp
 import LambdaRuntimeAPI
 import Foundation
 
-public protocol LambdaApiGatewayHandler {
+public protocol ApiGatewayHandler {
     
-    func handleRequest(_ requestEvent: LambdaHttpEvent) -> Void
+    func handleRequest(_ requestEvent: HTTPRequest) async throws -> HTTPResponse
     
 }
 
@@ -36,9 +35,9 @@ public class LambdaHttpEvent {
     
     static let encoder = JSONEncoder()
     let event: LambdaEvent
-    public let request: LambdaHTTPRequest
+    public let request: HTTPRequest
     
-    public init(event: LambdaEvent, request: LambdaHTTPRequest) {
+    public init(event: LambdaEvent, request: HTTPRequest) {
         self.event = event
         self.request = request
     }
@@ -47,7 +46,7 @@ public class LambdaHttpEvent {
         event.sendInvocationError(error: .init(error: error, errorType: "Vapor.Unknown"))
     }
     
-    public func sendResponse(response: LambdaHTTPResponse) {
+    public func sendResponse(response: HTTPResponse) {
         do {
             let rawResponse = RawLambdaHTTPResponse(
                 statusCode: response.statusCode,
@@ -64,13 +63,35 @@ public class LambdaHttpEvent {
     }
 }
 
-public class LambdaApiGatewayAdapter: LambdaAppEventHandler {
+public class ApiGatewayEventHandler: LambdaAppEventHandler {
+    
+    typealias Handler = (HTTPRequest) async throws -> HTTPResponse
+    
+    class AsyncApiGatewayHandler: ApiGatewayHandler {
+
+        let handler: (HTTPRequest) async throws -> HTTPResponse
+        
+        init(handler: @escaping Handler) {
+            self.handler = handler
+        }
+        
+        func handleRequest(_ requestEvent: HTTPRequest) async throws -> HTTPResponse {
+            return try await handler(requestEvent)
+        }
+    }
+    
     
     static let jsonDecoder = JSONDecoder()
-    let handler: LambdaApiGatewayHandler
+    let handler: ApiGatewayHandler
     
-    public init(_ handler: LambdaApiGatewayHandler) {
-        self.handler = handler
+    public init(_ h: ApiGatewayHandler) {
+        self.handler = h
+    }
+    
+    public init(_ h: @escaping (HTTPRequest) async throws -> HTTPResponse) {
+        self.handler = AsyncApiGatewayHandler { (event: HTTPRequest) in
+            try await h(event)
+        }
     }
     
     public func handleEvent(_ event: LambdaEvent) {
@@ -79,7 +100,16 @@ public class LambdaApiGatewayAdapter: LambdaAppEventHandler {
                 LambdaHTTPRequestBuilder.self,
                 from: event.payload.body
             ).build()
-            handler.handleRequest(.init(event: event, request: request))
+            let httpEvent = LambdaHttpEvent(event: event, request: request)
+            Task {
+                do {
+                    let response = try await handler.handleRequest(httpEvent.request)
+                    httpEvent.sendResponse(response: response)
+                }
+                catch let e {
+                    httpEvent.sendError(error: e)
+                }
+            }
         }
         catch let e {
             event.sendInvocationError(error: .init(error: e, errorType: "Lambda.RequestSerialization"))
