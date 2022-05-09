@@ -10,7 +10,9 @@ let package = Package(
         .library(name: "LambdaRuntimeAPI", targets: ["LambdaRuntimeAPI"]),
         .library(name: "LambdaApp", targets: ["LambdaApp"])
     ],
-    dependencies: [],
+    dependencies: [
+        .package(url: "https://github.com/soto-project/soto.git", .upToNextMajor(from: "5.11.0"))
+    ],
     targets: [
         .target(
             name: "LambdaRuntimeAPI",
@@ -23,19 +25,29 @@ let package = Package(
             ],
             path: "./Source/LambdaApp"
         ),
-        .testTarget(
-            name: "SystemTests",
+        .target(
+            name: "SystemTestsCommon",
             dependencies: [
-                "LambdaApp",
+                .product(name: "SotoDynamoDB", package: "soto")
             ],
-            path: "./Tests/SystemTests"
+            path: "./Source/SystemTestsCommon"
         ),
         .executableTarget(
             name: "SystemTestsApp",
             dependencies: [
-                "LambdaApp"
+                "LambdaApp",
+                "SystemTestsCommon",
+                .product(name: "SotoDynamoDB", package: "soto")
             ],
             path: "./Source/SystemTestsApp"
+        ),
+        .testTarget(
+            name: "SystemTests",
+            dependencies: [
+                "SystemTestsCommon",
+                .product(name: "SotoDynamoDB", package: "soto")
+            ],
+            path: "./Tests/SystemTests"
         )
     ],
     swiftLanguageVersions: [.v5]
