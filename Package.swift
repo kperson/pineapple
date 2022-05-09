@@ -8,15 +8,9 @@ let package = Package(
     ],
     products: [
         .library(name: "LambdaRuntimeAPI", targets: ["LambdaRuntimeAPI"]),
-        .library(name: "LambdaApp", targets: ["LambdaApp"]),
-        .library(name: "LambdaVapor", targets: ["LambdaVapor"]),
-        .library(name: "LambdaRemoteProxy", targets: ["LambdaRemoteProxy"])
+        .library(name: "LambdaApp", targets: ["LambdaApp"])
     ],
-    dependencies: [
-        .package(url: "https://github.com/vapor/vapor.git", .upToNextMajor(from: "4.54.0")),
-        .package(url: "https://github.com/soto-project/soto.git", .upToNextMajor(from: "5.11.0")),
-        .package(url: "https://github.com/kperson/swift-async-http.git", .upToNextMajor(from: "1.1.2"))
-    ],
+    dependencies: [],
     targets: [
         .target(
             name: "LambdaRuntimeAPI",
@@ -29,57 +23,20 @@ let package = Package(
             ],
             path: "./Source/LambdaApp"
         ),
-        .target(
-            name: "LambdaVapor",
+        .testTarget(
+            name: "SystemTests",
             dependencies: [
-                .product(name: "Vapor", package: "vapor"),
+                "LambdaApp",
+            ],
+            path: "./Tests/SystemTests"
+        ),
+        .executableTarget(
+            name: "SystemTestsApp",
+            dependencies: [
                 "LambdaApp"
             ],
-            path: "./Source/LambdaVapor"
-        ),
-        .target(
-            name: "LambdaRemoteClient",
-            dependencies: [
-                "LambdaApp",
-                .product(name: "AsyncHttp", package: "swift-async-http")
-            ],
-            path: "./Source/LambdaRemoteClient"
-        ),
-        .executableTarget(
-            name: "LambdaRemoteAPI",
-            dependencies: [
-                "LambdaVapor",
-                "LambdaApp",
-                "LambdaRemoteClient",
-                .product(name: "SotoDynamoDB", package: "soto")
-            ],
-            path: "./Source/LambdaRemoteAPI"
-        ),
-        .target(
-            name: "LambdaRemoteProxy",
-            dependencies: [
-                "LambdaApp",
-                "LambdaRemoteClient"
-            ],
-            path: "./Source/LambdaRemoteProxy"
-        ),
-        .testTarget(
-            name: "LambdaRemoteAPITests",
-            dependencies: [
-                "LambdaRemoteAPI",
-            ],
-            path: "./Tests/LambdaRemoteAPITests"
-        ),
-        .executableTarget(
-            name: "LambdaVaporDemo",
-            dependencies: [
-                "LambdaVapor",
-                "LambdaApp",
-                "LambdaRemoteProxy"
-            ],
-            path: "./Source/LambdaVaporDemo"
+            path: "./Source/SystemTestsApp"
         )
-        
     ],
     swiftLanguageVersions: [.v5]
 )

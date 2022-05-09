@@ -64,16 +64,16 @@ public typealias S3EventHandler = RecordsAppsEventHandler<S3Record, Void>
 
 public extension LambdaApp {
 
-    func addS3(_ handlerKey: String, _ handler: S3EventHandler) {
+    func addS3Handler(_ handlerKey: String, _ handler: S3EventHandler) {
         self.addHandler(handlerKey, handler)
     }
     
-    func addS3(_ handlerKey: String, _ handler: @escaping S3EventHandler.Handler) {
-        self.addS3(handlerKey, S3EventHandler(handler))
+    func addS3Handler(_ handlerKey: String, _ handler: @escaping S3EventHandler.Handler) {
+        self.addS3Handler(handlerKey, S3EventHandler(handler))
     }
     
-    func addS3(_ handlerKey: String, _ handler: @escaping S3EventHandler.BodyHandler) {
-        self.addS3(handlerKey) { items in
+    func addS3BodyHandler(_ handlerKey: String, _ handler: @escaping S3EventHandler.BodyHandler) {
+        self.addS3Handler(handlerKey) { items in
             try await handler(items.bodyRecords())
         }
     }
