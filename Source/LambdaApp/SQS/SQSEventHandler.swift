@@ -1,5 +1,4 @@
 import Foundation
-import LambdaRuntimeAPI
 
 
 public struct SQSMessageAttributeValue {
@@ -161,3 +160,21 @@ public struct SQSRecord: SQSRecordMeta, SQSBodyAttributes, RecordsItem {
 }
 
 public typealias SQSEventHandler = RecordsAppsEventHandler<SQSRecord, Void>
+
+public extension LambdaApp {
+
+    func addSQS(_ handlerKey: String, _ handler: SQSEventHandler) {
+        self.addHandler(handlerKey, handler)
+    }
+    
+    func addSQS(_ handlerKey: String, _ handler: @escaping SQSEventHandler.Handler) {
+        self.addSQS(handlerKey, SQSEventHandler(handler))
+    }
+    
+    func addSQS(_ handlerKey: String, _ handler: @escaping SQSEventHandler.BodyHandler) {
+        self.addSQS(handlerKey) { items in
+            try await handler(items.bodyRecords())
+        }
+    }
+    
+}

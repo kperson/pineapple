@@ -2,7 +2,6 @@ import Vapor
 import LambdaVapor
 import LambdaApp
 import LambdaRuntimeAPI
-import LambdaApiGateway
 import LambdaRemoteProxy
 
 let enviroment = ProcessInfo.processInfo.environment
@@ -34,6 +33,22 @@ else {
     app.get("hello") { req -> User in
         let user = try req.query.decode(User.self)
         return user
+    }
+    
+    Task {
+        let results = await withTaskGroup(of: String.self, returning: [String].self) { group in
+            for i in 1...10000 {
+                group.addTask {
+                    try! await Task.sleep(nanoseconds: 10_000_000_000)
+                    return String(i)
+                }
+            }
+            return await group.reduce(into: [String]()) { acc, str in
+                acc.append(String(str.reversed()))
+            }
+        
+        }
+        print(results)
     }
 
     if shouldRunAsLambda {

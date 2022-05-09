@@ -28,6 +28,7 @@ public protocol RecordsEventHandler {
 public class RecordsAppsEventHandler<T: RecordsItem, R>: LambdaAppEventHandler {
     
     public typealias Handler = ([Record<T.Meta, T.Body>]) async throws -> R
+    public typealias BodyHandler = ([T.Body]) async throws -> R
     public let handler: Handler
 
     public init(_ h: @escaping Handler) {

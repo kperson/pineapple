@@ -65,7 +65,7 @@ public class LambdaHttpEvent {
 
 public class ApiGatewayEventHandler: LambdaAppEventHandler {
     
-    typealias Handler = (HTTPRequest) async throws -> HTTPResponse
+    public typealias Handler = (HTTPRequest) async throws -> HTTPResponse
     
     class AsyncApiGatewayHandler: ApiGatewayHandler {
 
@@ -115,4 +115,17 @@ public class ApiGatewayEventHandler: LambdaAppEventHandler {
             event.sendInvocationError(error: .init(error: e, errorType: "Lambda.RequestSerialization"))
         }
     }
+}
+
+
+public extension LambdaApp {
+
+    func addApiGateway(_ handlerKey: String, _ handler: ApiGatewayHandler) {
+        self.addHandler(handlerKey, ApiGatewayEventHandler(handler))
+    }
+    
+    func addApiGateway(_ handlerKey: String, _ handler: @escaping ApiGatewayEventHandler.Handler) {
+        self.addApiGateway(handlerKey, ApiGatewayEventHandler.AsyncApiGatewayHandler(handler: handler))
+    }
+    
 }

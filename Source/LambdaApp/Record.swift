@@ -53,4 +53,12 @@ public extension Array  {
             return nil
         }
     }
+    
+    func bodyRecords<Meta, Body>() -> [Body] where Element == Record<Meta, Body> {
+        return map { $0.body }
+    }
+    
+    func metaRecords<Meta, Body>() -> [Meta] where Element == Record<Meta, Body> {
+        return map { $0.meta }
+    }
 }
