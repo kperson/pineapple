@@ -6,6 +6,7 @@ module "ecr_push" {
 
 module "sqs_test" {
   source             = "../terraform-support/sqs-lambda"
+  depends_on = [module.ecr_push]
   sqs_arn            = aws_sqs_queue.test_queue.arn
   function_name      = "pineapple-sqs"
   role               = module.lambda_role_arn.out

@@ -84,12 +84,13 @@ data "aws_ecr_image" "image" {
 
 # Logs
 resource "aws_cloudwatch_log_group" "lambda" {
-  name              = format("/aws/lambda/%s", aws_lambda_function.lambda.function_name)
+  name              = format("/aws/lambda/%s", var.function_name)
   retention_in_days = var.log_retention_in_days
 }
 
 # Lambda
 resource "aws_lambda_function" "lambda" {
+  depends_on = [aws_cloudwatch_log_group.lambda]
   function_name    = var.function_name
   role             = var.role
   publish          = true
