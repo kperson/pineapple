@@ -13,3 +13,17 @@ class RemoteTestCase: XCTestCase {
     )
 
 }
+
+extension RemoteVerify {
+    
+    func retrieveOrFail(key: String, failureMessage: String) async throws -> String? {
+        if let value = try await fetch(key: key) {
+            return value
+        }
+        else {
+            XCTFail(failureMessage)
+        }
+        return nil
+    }
+    
+}

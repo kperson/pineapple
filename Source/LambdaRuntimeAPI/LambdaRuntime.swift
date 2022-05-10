@@ -164,6 +164,20 @@ public protocol Runtime {
 
 public class LambdaRuntime: Runtime {
     
+    public enum LogLevel: Int {
+        case debug = 1
+        case info = 2
+        case error = 3
+        
+        var name: String {
+            switch self {
+            case .debug: return "debug"
+            case .info: return "info"
+            case.error: return "error"
+            }
+        }
+    }
+    
     public weak var eventHandler: LambdaEventHandler?
     public weak var logHandler: LambdaRuntimeLogHandler?
 
@@ -173,6 +187,8 @@ public class LambdaRuntime: Runtime {
     private let encoder = JSONEncoder()
     private let semaphore = DispatchSemaphore(value: 0)
     private let runAsync: Bool
+    private let logLevel: LogLevel
+    
     
     
     /// Initializes a Lambda Runtime
@@ -181,7 +197,8 @@ public class LambdaRuntime: Runtime {
     ///   - runAsync: if some other process if keeping the application alive, set to true, defaults to false
     public init(
         runTimeAPI: String? = nil,
-        runAsync: Bool = false
+        runAsync: Bool = false,
+        logLevel: LogLevel = .error
     ) {
         setbuf(stdout, nil)
         setbuf(stderr, nil)
@@ -189,6 +206,14 @@ public class LambdaRuntime: Runtime {
             ?? ProcessInfo.processInfo.environment["AWS_LAMBDA_RUNTIME_API"]
             ?? "localhost:8080"
         self.runAsync = runAsync
+        self.logLevel = logLevel
+    }
+    
+    private func log(_ level: LogLevel, _ items: Any...) {
+        if level.rawValue >= self.logLevel.rawValue {
+            print("\(level.name): \(items)")
+            fflush(stdout)
+        }
     }
     
     public func start() {
@@ -234,6 +259,7 @@ public class LambdaRuntime: Runtime {
     }
     
     public func sendResponse(requestId: String, data: Data) {
+        log(.debug, "Sending response for requestId = \(requestId)")
         request(
             method: "POST",
             path: "2018-06-01/runtime/invocation/\(requestId)/response",
@@ -245,6 +271,7 @@ public class LambdaRuntime: Runtime {
     }
     
     public func sendInitializationError(error: LambdaError) {
+        log(.error, "Sending initialization error: \(error)")
         if let data = try? encoder.encode(error) {
             request(
                 method: "POST",
@@ -258,6 +285,7 @@ public class LambdaRuntime: Runtime {
     }
     
     public func sendInvocationError(requestId: String, error: LambdaError) {
+        log(.error, "Sending invocation error: \(error)")
         if let data = try? encoder.encode(error) {
             request(
                 method: "POST",
@@ -320,5 +348,7 @@ public class LambdaRuntime: Runtime {
         })
         task.resume()
     }
+    
+    
     
 }

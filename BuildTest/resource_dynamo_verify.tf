@@ -15,3 +15,15 @@ module "db_verify" {
     name = "ttl"
   }
 }
+
+module "db_verify_policy" {
+  source     = "github.com/kperson/terraform-modules//dynamo-crud-policy"
+  table_arn  = module.db_verify.arn
+  stream_arn = module.db_verify.stream_arn
+}
+
+module "db_verify_policy_role_attachement" {
+  source     = "github.com/kperson/terraform-modules//aws_role_attachment"
+  role       = aws_iam_role.lambda.name
+  policy_arn = module.db_verify_policy.arn
+}

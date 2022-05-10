@@ -3,13 +3,13 @@ import Foundation
 
 public struct SQSMessageAttributeValue {
     
-    let binaryListValues: [Data]
-    let binaryValue: Data?
+    public let binaryListValues: [Data]
+    public let binaryValue: Data?
     
-    let stringValue: String?
-    let stringListValues: [String]
+    public let stringValue: String?
+    public let stringListValues: [String]
     
-    let dataType: String
+    public let dataType: String
     
     public init?(dict: [String : Any]) {
         if let dataType = dict["dataType"] as? String {

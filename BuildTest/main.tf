@@ -16,5 +16,6 @@ module "sqs_test" {
 
   env = {
     MY_HANDLER = "test.sqs"
+    "VERIFY_TABLE" = module.db_verify.id
   }
 }
