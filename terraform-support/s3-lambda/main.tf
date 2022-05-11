@@ -1,10 +1,21 @@
-# SNS
-variable "topic_arn" {
+# S3
+variable "bucket_name" {
   type = string
 }
 
-variable "filter_policy" {
-  type    = string
+# https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-how-to-event-types-and-destinations.html#supported-notification-event-types
+# See link above for list of events
+variable "events" {
+  type = list(string)
+}
+
+variable "filter_prefix" {
+  type = string
+  default = null
+}
+
+variable "filter_suffix" {
+  type = string
   default = null
 }
 
@@ -117,17 +128,27 @@ resource "aws_lambda_function" "lambda" {
   }
 }
 
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_notification
+data "aws_s3_bucket" "lambda" {
+  bucket = var.bucket_name
+}
+
 resource "aws_lambda_permission" "lambda" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.lambda.function_name
-  principal     = "sns.amazonaws.com"
-  source_arn    = var.topic_arn
+  principal     = "s3.amazonaws.com"
+  source_arn    = data.aws_s3_bucket.lambda.arn
 }
 
-resource "aws_sns_topic_subscription" "lambda" {
-  depends_on    = [aws_lambda_permission.lambda]
-  topic_arn     = var.topic_arn
-  protocol      = "lambda"
-  endpoint      = aws_lambda_function.lambda.arn
-  filter_policy = var.filter_policy
+resource "aws_s3_bucket_notification" "lambda" {
+  bucket =  data.aws_s3_bucket.lambda.id
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.lambda.arn
+    events              = var.events
+    filter_prefix       = var.filter_prefix
+    filter_suffix       = var.filter_suffix
+  }
+
+  depends_on = [aws_lambda_permission.lambda]
 }
