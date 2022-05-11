@@ -1,11 +1,11 @@
-# SQS
-variable "sqs_arn" {
+# SNS
+variable "topic_arn" {
   type = string
 }
 
-variable "batch_size" {
-  type    = number
-  default = 10
+variable "filter_policy" {
+  type    = string
+  default = null
 }
 
 # Common
@@ -117,9 +117,18 @@ resource "aws_lambda_function" "lambda" {
   }
 }
 
-resource "aws_lambda_event_source_mapping" "lambda" {
-  batch_size       = var.batch_size
-  event_source_arn = var.sqs_arn
-  enabled          = true
-  function_name    = aws_lambda_function.lambda.arn
+resource "aws_lambda_permission" "lambda" {
+  statement_id  = "AllowExecutionFromSNS"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.lambda.function_name
+  principal     = "sns.amazonaws.com"
+  source_arn    = var.topic_arn
+}
+
+resource "aws_sns_topic_subscription" "lambda" {
+  depends_on    = [aws_lambda_permission.lambda]
+  topic_arn     = var.topic_arn
+  protocol      = "lambda"
+  endpoint      = aws_lambda_function.lambda.arn
+  filter_policy = var.filter_policy
 }

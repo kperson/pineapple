@@ -21,7 +21,6 @@ let verifyTable = ProcessInfo.processInfo.environment["VERIFY_TABLE"]!
 // when an environment variable of MY_HANDLER=test.sqs, this code will run
 app.addSQSHandler("test.sqs") { records in
     for r in records {
-        log(r)
         if let testRunKey = r.body.messageAttributes["testRunKey"]?.stringValue {
             let verifer = RemoteVerify(dynamoDB: dynamo, testRunKey: testRunKey, tableName: verifyTable)
             try await verifer.save(key: "messageBody", value: r.body.body)
@@ -32,6 +31,14 @@ app.addSQSHandler("test.sqs") { records in
             try await verifer.save(key: "messageBodyBinary", value: r.body.body)
         }
     
+    }
+}
+
+app.addSNSHandler("test.sns") { records in
+    for r in records {
+        let msg = try DemoMessage(jsonStr: r.body.message)
+        let verifer = RemoteVerify(dynamoDB: dynamo, testRunKey: msg.testRunKey, tableName: verifyTable)
+        try await verifer.save(key: "messageBody", value: msg.jsonStr())
     }
 }
 

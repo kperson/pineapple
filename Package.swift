@@ -46,7 +46,8 @@ let package = Package(
             dependencies: [
                 "SystemTestsCommon",
                 .product(name: "SotoDynamoDB", package: "soto"),
-                .product(name: "SotoSQS", package: "soto")
+                .product(name: "SotoSQS", package: "soto"),
+                .product(name: "SotoSNS", package: "soto")
             ],
             path: "./Tests/SystemTests"
         )
