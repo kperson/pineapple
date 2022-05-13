@@ -58,10 +58,3 @@ public extension Array where Element: ChangeCapturey {
     }
     
 }
-
-public enum CreateDelete {
-    
-    case create
-    case delete
-    
-}

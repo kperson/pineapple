@@ -37,3 +37,21 @@ module "sns_test" {
     VERIFY_TABLE = module.db_verify.id
   }
 }
+
+module "s3_test" {
+  source        = "../terraform-support/s3-lambda"
+  depends_on    = [module.ecr_push]
+  bucket_name   = aws_s3_bucket.test_bucket.id
+  events        = ["s3:ObjectCreated:*", "s3:ObjectRemoved:*"]
+  function_name = "pineapple-s3"
+  role          = module.lambda_role_arn.out
+  ecr_repo_name = module.ecr_push.ecr_repo_name
+  ecr_repo_tag  = module.ecr_push.ecr_repo_tag
+  memory_size   = 256
+  timeout       = 30
+
+  env = {
+    MY_HANDLER   = "test.s3"
+    VERIFY_TABLE = module.db_verify.id
+  }
+}

@@ -74,27 +74,6 @@ resource "null_resource" "build_and_push" {
   }
 }
 
-# output "image_uri" {
-#   depends_on = [null_resource.build_and_push]
-#   value      = replace(format("%s%s", var.image_uri, aws_ecr_repository.ecr_repo.repository_url), aws_ecr_repository.ecr_repo.repository_url, "")
-# }
-
-# output "ecr_repository_url" {
-#   depends_on = [null_resource.build_and_push]
-#   value      = format("%s", aws_ecr_repository.ecr_repo.repository_url)
-# }
-
-# output "ecr_repo_name" {
-#   depends_on = [null_resource.build_and_push]
-#   value      = replace(format("%s%s", var.ecr_repo_name, aws_ecr_repository.ecr_repo.repository_url), aws_ecr_repository.ecr_repo.repository_url, "")
-# }
-
-# output "ecr_repo_tag" {
-#   depends_on = [null_resource.build_and_push]
-#   value      = replace(format("%s%s", var.ecr_repo_tag, aws_ecr_repository.ecr_repo.repository_url), aws_ecr_repository.ecr_repo.repository_url, "")
-# }
-
-
 output "image_uri" {
   depends_on = [null_resource.build_and_push]
   value      = var.image_uri

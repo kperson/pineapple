@@ -4,6 +4,7 @@ variable "bucket_name" {
 }
 
 # https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-how-to-event-types-and-destinations.html#supported-notification-event-types
+# https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-content-structure.html
 # See link above for list of events
 variable "events" {
   type = list(string)

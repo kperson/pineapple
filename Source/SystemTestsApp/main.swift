@@ -15,31 +15,37 @@ let app = LambdaApp(enviromentVariable: "MY_HANDLER")
 
 let client = AWSClient(httpClientProvider: .createNew)
 let dynamo = DynamoDB(client: client)
-let verifyTable = ProcessInfo.processInfo.environment["VERIFY_TABLE"]!
+if let verifyTable = ProcessInfo.processInfo.environment["VERIFY_TABLE"] {
 
-
-// when an environment variable of MY_HANDLER=test.sqs, this code will run
-app.addSQSHandler("test.sqs") { records in
-    for r in records {
-        if let testRunKey = r.body.messageAttributes["testRunKey"]?.stringValue {
-            let verifer = RemoteVerify(dynamoDB: dynamo, testRunKey: testRunKey, tableName: verifyTable)
-            try await verifer.save(key: "messageBody", value: r.body.body)
+    // when an environment variable of MY_HANDLER=test.sqs, this code will run
+    app.addSQSHandler("test.sqs") { records in
+        for r in records {
+            if let testRunKey = r.body.messageAttributes["testRunKey"]?.stringValue {
+                let verifer = RemoteVerify(dynamoDB: dynamo, testRunKey: testRunKey, tableName: verifyTable)
+                try await verifer.save(key: "messageBody", value: r.body.body)
+            }
+            if let testRunKeyBinary = r.body.messageAttributes["testRunKeyAsBinary"]?.binaryValue {
+                let testRunKey = String(data: testRunKeyBinary, encoding: .utf8)!
+                let verifer = RemoteVerify(dynamoDB: dynamo, testRunKey: testRunKey, tableName: verifyTable)
+                try await verifer.save(key: "messageBodyBinary", value: r.body.body)
+            }
+        
         }
-        if let testRunKeyBinary = r.body.messageAttributes["testRunKeyAsBinary"]?.binaryValue {
-            let testRunKey = String(data: testRunKeyBinary, encoding: .utf8)!
-            let verifer = RemoteVerify(dynamoDB: dynamo, testRunKey: testRunKey, tableName: verifyTable)
-            try await verifer.save(key: "messageBodyBinary", value: r.body.body)
+    }
+
+    app.addSNSHandler("test.sns") { records in
+        for r in records {
+            let msg = try DemoMessage(jsonStr: r.body.message)
+            let verifer = RemoteVerify(dynamoDB: dynamo, testRunKey: msg.testRunKey, tableName: verifyTable)
+            try await verifer.save(key: "messageBody", value: msg.jsonStr())
         }
-    
     }
-}
 
-app.addSNSHandler("test.sns") { records in
-    for r in records {
-        let msg = try DemoMessage(jsonStr: r.body.message)
-        let verifer = RemoteVerify(dynamoDB: dynamo, testRunKey: msg.testRunKey, tableName: verifyTable)
-        try await verifer.save(key: "messageBody", value: msg.jsonStr())
+    app.addS3Handler("test.s3") { records in
+        for r in records {
+            log(r)
+        }
     }
-}
 
-app.runtime.start()
+    app.runtime.start()
+}
