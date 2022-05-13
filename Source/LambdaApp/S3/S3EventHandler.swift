@@ -20,11 +20,12 @@ public protocol S3BodyAttributes {
     var s3ObjectETag: String? { get }
     var s3ObjectVersionId: String? { get }
     var s3ObjectSequencer: String { get }
+    var eventClass: S3Record.S3EventClass { get }
 }
 
 public struct S3Record: S3RecordMeta, S3BodyAttributes, RecordsItem {
     
-    public enum EventClass {
+    public enum S3EventClass {
         case test
         case objectCreated
         case objectRemoved
@@ -57,7 +58,7 @@ public struct S3Record: S3RecordMeta, S3BodyAttributes, RecordsItem {
     public let s3ObjectVersionId: String?
     public let ownerIdPrincipalId: String
     public let userIdPrincipalId: String
-    public let eventClass: EventClass
+    public let eventClass: S3EventClass
     
     // https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-content-structure.html
     // doesn't tell you what is optional, but this is best I could find

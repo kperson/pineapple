@@ -8,7 +8,7 @@ class RemoteTestCase: XCTestCase {
 
     let verifier = RemoteVerify(
         dynamoDB:  DynamoDB(client: AWSClient(httpClientProvider: .createNew)),
-        testRunKey: UUID().uuidString,
+        testRunKey: UUID().uuidString.replacingOccurrences(of: "-", with: ""),
         tableName: ProcessInfo.processInfo.environment["REMOTE_VERIFY_TABLE_NAME"]!
     )
 

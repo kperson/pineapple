@@ -44,8 +44,17 @@ if let verifyTable = ProcessInfo.processInfo.environment["VERIFY_TABLE"] {
     app.addS3Handler("test.s3") { records in
         for r in records {
             log(r)
+            if let keySubStr = r.body.s3ObjectKey.split(separator: "-").first {
+                let verifyKey = String(keySubStr)
+                let verifer = RemoteVerify(dynamoDB: dynamo, testRunKey: verifyKey, tableName: verifyTable)
+                if r.body.eventClass == .objectCreated {
+                    try await verifer.save(key: "objectCreated", value: r.body.s3ObjectKey)
+                }
+                else if r.body.eventClass == .objectRemoved {
+                    try await verifer.save(key: "objectRemoved", value: r.body.s3ObjectKey)
+                }
+            }
         }
     }
-
     app.runtime.start()
 }
