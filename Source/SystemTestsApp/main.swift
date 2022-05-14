@@ -71,5 +71,13 @@ if let verifyTable = ProcessInfo.processInfo.environment["VERIFY_TABLE"] {
         }
     }
     
+    app.addApiGateway("test.http") { request in
+        HTTPResponse(
+            statusCode: 200,
+            body: "hello_word".data(using: .utf8),
+            headers: ["Content-Type" :  "text/plain"]
+        )
+    }
+    
     app.runtime.start()
 }

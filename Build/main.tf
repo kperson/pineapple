@@ -72,3 +72,22 @@ module "dynamo_test" {
     VERIFY_TABLE = module.db_verify.id
   }
 }
+
+module "http_test" {
+  source               = "../terraform-support/api-gateway-lambda"
+  depends_on           = [module.ecr_push, aws_api_gateway_rest_api.pineapple]
+  api_gateway_name     = "pineapple-test"
+  stage_name           = "default"
+  function_name        = "pineapple-http"
+  role                 = module.lambda_role_arn.out
+  ecr_repo_name        = module.ecr_push.ecr_repo_name
+  ecr_repo_tag         = module.ecr_push.ecr_repo_tag
+  memory_size          = 256
+  timeout              = 15
+
+  env = {
+    MY_HANDLER   = "test.http"
+    VERIFY_TABLE = module.db_verify.id
+  }
+
+}
