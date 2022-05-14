@@ -1,6 +1,7 @@
 import Foundation
 
 
+
 public struct DemoMessage: Codable, Equatable {
     
     static let encoder = JSONEncoder()

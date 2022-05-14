@@ -4,7 +4,7 @@ import XCTest
 import SystemTestsCommon
 
 
-class S3STestCase: RemoteTestCase {
+class S3TestCase: RemoteTestCase {
     
     let bucket = "pineapple-test"
     let s3 = S3(client: AWSClient(httpClientProvider: .createNew))

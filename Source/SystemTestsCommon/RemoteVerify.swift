@@ -1,11 +1,17 @@
 import Foundation
 import SotoDynamoDB
 
-struct Verify: Codable {
+public struct Verify: Codable {
     
-    let verifyKey: String
-    let value: String
-    let ttl: Int
+    public let verifyKey: String
+    public let value: String
+    public let ttl: Int
+    
+    public init(verifyKey: String, value: String, ttl: Int) {
+        self.verifyKey = verifyKey
+        self.value = value
+        self.ttl = ttl
+    }
     
 }
 

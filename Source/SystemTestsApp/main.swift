@@ -3,15 +3,9 @@ import LambdaApp
 import SotoDynamoDB
 import SystemTestsCommon
 
-// this works better for cloud watch
-func log(_ items: Any..., separator: String = " ", terminator: String = "\n") {
-    print(items, separator: separator, terminator: terminator)
-    fflush(stdout)
-}
 
 // This is an app shows how to use tooling and test the tooling
 let app = LambdaApp(enviromentVariable: "MY_HANDLER")
-
 
 let client = AWSClient(httpClientProvider: .createNew)
 let dynamo = DynamoDB(client: client)
@@ -29,7 +23,6 @@ if let verifyTable = ProcessInfo.processInfo.environment["VERIFY_TABLE"] {
                 let verifer = RemoteVerify(dynamoDB: dynamo, testRunKey: testRunKey, tableName: verifyTable)
                 try await verifer.save(key: "messageBodyBinary", value: r.body.body)
             }
-        
         }
     }
 
@@ -43,7 +36,6 @@ if let verifyTable = ProcessInfo.processInfo.environment["VERIFY_TABLE"] {
 
     app.addS3Handler("test.s3") { records in
         for r in records {
-            log(r)
             if let keySubStr = r.body.s3ObjectKey.split(separator: "-").first {
                 let verifyKey = String(keySubStr)
                 let verifer = RemoteVerify(dynamoDB: dynamo, testRunKey: verifyKey, tableName: verifyTable)
@@ -56,5 +48,28 @@ if let verifyTable = ProcessInfo.processInfo.environment["VERIFY_TABLE"] {
             }
         }
     }
+    
+    app.addDynamoHandler("test.dynamo") { records in
+        func extractVerifyKey(_ dict: [String : Any]) -> String {
+            if let key = dict["verifyKey"] as? [String : Any], let value = key["S"] as? String {
+                return value
+            }
+            return ""
+        }
+        for r in records {
+            switch r.body.change {
+            case .create(new: let n):
+                let verifier = RemoteVerify(dynamoDB: dynamo, testRunKey: extractVerifyKey(n), tableName: verifyTable)
+                try await verifier.save(key: "new", value: verifier.testRunKey)
+            case .update(new: let n, old: _):
+                let verifier = RemoteVerify(dynamoDB: dynamo, testRunKey: extractVerifyKey(n), tableName: verifyTable)
+                try await verifier.save(key: "update", value: verifier.testRunKey)
+            case .delete(old: let o):
+                let verifier = RemoteVerify(dynamoDB: dynamo, testRunKey: extractVerifyKey(o), tableName: verifyTable)
+                try await verifier.save(key: "delete", value: verifier.testRunKey)
+            }
+        }
+    }
+    
     app.runtime.start()
 }

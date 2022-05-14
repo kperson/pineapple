@@ -52,6 +52,7 @@ public class RecordsAppsEventHandler<T: RecordsItem, R>: LambdaAppEventHandler {
             Task {
                 do {
                     _ = try await handler(transformedRecords)
+                    event.sendResponse(data: [:])
                 }
                 catch let error {
                     event.sendInvocationError(error: LambdaError(error: error))

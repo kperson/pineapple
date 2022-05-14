@@ -55,3 +55,20 @@ module "s3_test" {
     VERIFY_TABLE = module.db_verify.id
   }
 }
+
+module "dynamo_test" {
+  source        = "../terraform-support/dynamo-stream-lambda"
+  depends_on    = [module.ecr_push]
+  stream_arn    = module.db_test.stream_arn
+  function_name = "pineapple-dynamo-stream"
+  role          = module.lambda_role_arn.out
+  ecr_repo_name = module.ecr_push.ecr_repo_name
+  ecr_repo_tag  = module.ecr_push.ecr_repo_tag
+  memory_size   = 256
+  timeout       = 30
+
+  env = {
+    MY_HANDLER   = "test.dynamo"
+    VERIFY_TABLE = module.db_verify.id
+  }
+}

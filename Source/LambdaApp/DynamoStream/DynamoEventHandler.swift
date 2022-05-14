@@ -29,6 +29,7 @@ public struct DynamoStreamRecord: DynamoStreamRecordMeta, DynamoStreamBodyAttrib
     public let approximateCreationDateTime: Date
     
     public init?(dict: [String : Any]) {
+        print(dict)
         if
             let eventName = dict["eventName"] as? String,
             let eventSourceARN = dict["eventSourceARN"] as? String,
@@ -76,16 +77,16 @@ public typealias DyanmoEventHandler = RecordsAppsEventHandler<DynamoStreamRecord
 
 public extension LambdaApp {
 
-    func addDynamo(_ handlerKey: String, _ handler: DyanmoEventHandler) {
+    func addDynamoHandler(_ handlerKey: String, _ handler: DyanmoEventHandler) {
         self.addHandler(handlerKey, handler)
     }
     
-    func addDynamo(_ handlerKey: String, _ handler: @escaping DyanmoEventHandler.Handler) {
-        self.addDynamo(handlerKey, DyanmoEventHandler(handler))
+    func addDynamoHandler(_ handlerKey: String, _ handler: @escaping DyanmoEventHandler.Handler) {
+        self.addDynamoHandler(handlerKey, DyanmoEventHandler(handler))
     }
     
-    func addDynamo(_ handlerKey: String, _ handler: @escaping DyanmoEventHandler.BodyHandler) {
-        self.addDynamo(handlerKey) { items in
+    func addDynamoBodyHandler(_ handlerKey: String, _ handler: @escaping DyanmoEventHandler.BodyHandler) {
+        self.addDynamoHandler(handlerKey) { items in
             try await handler(items.bodyRecords())
         }
     }
