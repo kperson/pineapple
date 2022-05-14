@@ -188,5 +188,12 @@ output "stage" {
   value      = var.stage_name
 }
 
-
-
+output "endpoint" {
+  depends_on = [aws_api_gateway_deployment.api]
+  value = format(
+    "https://%s.execute-api.%s.amazonaws.com/%s",
+    data.aws_api_gateway_rest_api.api.id,
+    data.aws_region.current.name,
+    var.stage_name
+  )
+}
