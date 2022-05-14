@@ -9,6 +9,8 @@ public protocol LambdaAppEventHandler {
 
 public enum LambdaResponse: Codable, Equatable {
     
+    public static let emptyResponse: LambdaResponse = .response(payload: .init(body: "{}".data(using: .utf8)!))
+    
     case response(payload: LambdaSuccessPayload)
     case invocationError(error: LambdaError)
     case initializationError(error: LambdaError)
@@ -73,7 +75,7 @@ public class LambdaApp: LambdaEventHandler {
         handlers[handlerKey] = handler
     }
     
-    public func addHandler(_ handlerKey: String, _ handler: @escaping (LambdaEvent) async throws -> LambdaResponse) {
+    public func addAsyncHandler(_ handlerKey: String, _ handler: @escaping (LambdaEvent) async throws -> LambdaResponse) {
         let h: (LambdaEvent) -> Void = { e in
             Task {
                 let rs = try await handler(e)

@@ -79,5 +79,14 @@ if let verifyTable = ProcessInfo.processInfo.environment["VERIFY_TABLE"] {
         )
     }
     
+    app.addAsyncHandler("test.cron") { event in
+        if let str = String(data: event.payload.body, encoding: .utf8) {
+            print(str)
+        }
+        let verifier = RemoteVerify(dynamoDB: dynamo, testRunKey: "cron", tableName: verifyTable)
+        try await verifier.save(key: "cronTriggered", value: "cronTriggered")
+        return .emptyResponse
+    }
+
     app.runtime.start()
 }

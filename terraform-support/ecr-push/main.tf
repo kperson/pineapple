@@ -11,9 +11,15 @@ variable "ecr_repo_tag" {
   default = "latest"
 }
 
+variable "tags" {
+  type = map
+  default = {}
+}
+
 resource "aws_ecr_repository" "ecr_repo" {
   name                 = var.ecr_repo_name
   image_tag_mutability = "MUTABLE"
+  tags = var.tags
 
   image_scanning_configuration {
     scan_on_push = true

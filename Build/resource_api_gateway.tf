@@ -9,3 +9,6 @@ resource "aws_api_gateway_rest_api" "pineapple" {
   }
 }
 
+output "endpoint" {
+  value = module.http_test.endpoint
+}

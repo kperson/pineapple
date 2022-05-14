@@ -1,11 +1,7 @@
-# SNS
-variable "topic_arn" {
+# Cloudwatch Event
+# https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+variable "schedule_expression" {
   type = string
-}
-
-variable "filter_policy" {
-  type    = string
-  default = null
 }
 
 # Common
@@ -90,8 +86,7 @@ data "aws_ecr_repository" "image" {
 resource "aws_cloudwatch_log_group" "lambda" {
   name              = format("/aws/lambda/%s", var.function_name)
   retention_in_days = var.log_retention_in_days
-        tags = var.tags
-
+  tags = var.tags
 }
 
 # Lambda
@@ -105,8 +100,7 @@ resource "aws_lambda_function" "lambda" {
   timeout                        = var.timeout
   source_code_hash               = trimprefix(data.aws_ecr_image.image.id, "sha256:")
   reserved_concurrent_executions = var.reserved_concurrent_executions
-        tags = var.tags
-
+  tags = var.tags
 
   vpc_config {
     subnet_ids         = var.subnet_ids
@@ -125,17 +119,21 @@ resource "aws_lambda_function" "lambda" {
   }
 }
 
-resource "aws_lambda_permission" "lambda" {
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.lambda.function_name
-  principal     = "sns.amazonaws.com"
-  source_arn    = var.topic_arn
+resource "aws_cloudwatch_event_rule" "rule" {
+  schedule_expression = var.schedule_expression
+  tags = var.tags
 }
 
-resource "aws_sns_topic_subscription" "lambda" {
-  depends_on    = [aws_lambda_permission.lambda]
-  topic_arn     = var.topic_arn
-  protocol      = "lambda"
-  endpoint      = aws_lambda_function.lambda.arn
-  filter_policy = var.filter_policy
+resource "aws_cloudwatch_event_target" "event_target" {
+  rule = aws_cloudwatch_event_rule.rule.name
+  arn  = aws_lambda_function.lambda.arn
+  tags = var.tags
+}
+
+resource "aws_lambda_permission" "lambda_permission" {
+  depends_on =  [aws_lambda_function.lambda]
+  action        = "lambda:InvokeFunction"
+  function_name = var.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.rule.arn
 }

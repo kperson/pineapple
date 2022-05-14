@@ -71,6 +71,10 @@ variable "log_retention_in_days" {
   default = 30
 }
 
+variable "tags" {
+  type = map
+  default = {}
+}
 
 # Docker Image
 data "aws_ecr_image" "image" {
@@ -86,6 +90,8 @@ data "aws_ecr_repository" "image" {
 resource "aws_cloudwatch_log_group" "lambda" {
   name              = format("/aws/lambda/%s", var.function_name)
   retention_in_days = var.log_retention_in_days
+          tags = var.tags
+
 }
 
 # Lambda
@@ -99,6 +105,8 @@ resource "aws_lambda_function" "lambda" {
   timeout                        = var.timeout
   source_code_hash               = trimprefix(data.aws_ecr_image.image.id, "sha256:")
   reserved_concurrent_executions = var.reserved_concurrent_executions
+          tags = var.tags
+
 
   vpc_config {
     subnet_ids         = var.subnet_ids
