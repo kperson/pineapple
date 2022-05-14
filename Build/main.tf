@@ -12,7 +12,7 @@ module "sqs_test" {
   role          = module.lambda_role_arn.out
   ecr_repo_name = module.ecr_push.ecr_repo_name
   ecr_repo_tag  = module.ecr_push.ecr_repo_tag
-  memory_size   = 256
+  memory_size   = 512
   timeout       = 30
 
   env = {
@@ -29,7 +29,7 @@ module "sns_test" {
   role          = module.lambda_role_arn.out
   ecr_repo_name = module.ecr_push.ecr_repo_name
   ecr_repo_tag  = module.ecr_push.ecr_repo_tag
-  memory_size   = 256
+  memory_size   = 512
   timeout       = 30
 
   env = {
@@ -47,7 +47,7 @@ module "s3_test" {
   role          = module.lambda_role_arn.out
   ecr_repo_name = module.ecr_push.ecr_repo_name
   ecr_repo_tag  = module.ecr_push.ecr_repo_tag
-  memory_size   = 256
+  memory_size   = 512
   timeout       = 30
 
   env = {
@@ -64,7 +64,7 @@ module "dynamo_test" {
   role          = module.lambda_role_arn.out
   ecr_repo_name = module.ecr_push.ecr_repo_name
   ecr_repo_tag  = module.ecr_push.ecr_repo_tag
-  memory_size   = 256
+  memory_size   = 512
   timeout       = 30
 
   env = {
@@ -82,8 +82,8 @@ module "http_test" {
   role             = module.lambda_role_arn.out
   ecr_repo_name    = module.ecr_push.ecr_repo_name
   ecr_repo_tag     = module.ecr_push.ecr_repo_tag
-  memory_size      = 256
-  timeout          = 15
+  memory_size      = 512
+  timeout          = 30
 
   env = {
     MY_HANDLER   = "test.http"
