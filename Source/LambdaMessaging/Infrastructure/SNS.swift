@@ -8,8 +8,8 @@ public struct SNSTopic: Hashable, Equatable {
     public let name: TopicName
     public let isFifo: Bool
     
-    public init(name: TopicName, isFifo: Bool = true) {
-        self.name = name
+    public init(name: CustomStringConvertible, isFifo: Bool = true) {
+        self.name = String(describing: name)
         self.isFifo = isFifo
     }
     

@@ -7,5 +7,5 @@ public class NameResolver {
     public var interpolateTopicArn: (TopicName) -> TopicArn = {
         .interpolate("aws_sns_topic.\($0.lowercased()).arn")
     }
-        
+            
 }

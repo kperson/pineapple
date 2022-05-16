@@ -1,4 +1,5 @@
 import Foundation
+import LambdaApp
 
 public protocol Encode {
     
@@ -9,12 +10,40 @@ public protocol Encode {
     
 }
 
+public class FuncEncode<In, Out>: Encode {
+
+    let handler: (In) throws -> Out
+    
+    public init(_ handler: @escaping (In) throws -> Out) {
+        self.handler = handler
+    }
+    
+    public func encode(input: In) throws -> Out {
+        try handler(input)
+    }
+    
+}
+
 public protocol Decode {
     
     associatedtype In
     associatedtype Out
     
     func decode(input: In) throws -> Out
+    
+}
+
+public class FuncDecode<In, Out>: Decode {
+
+    let handler: (In) throws -> Out
+    
+    public init(_ handler: @escaping (In) throws -> Out) {
+        self.handler = handler
+    }
+    
+    public func decode(input: In) throws -> Out {
+        try handler(input)
+    }
     
 }
 
@@ -52,24 +81,38 @@ public class JSONDecode<Out: Decodable>: Decode {
 
 class Demo {
     
-    enum Topics: String {
-        case valueAsString
+    enum Topics: String, CustomStringConvertible {
+        case strToInt
+        case converToint
+        var description: String {
+            return rawValue
+        }
     }
     
-    func abc()  {
+    enum Functions: String, CustomStringConvertible {
+        case converToint
+        case intReader
         
-//        
-//        let aws = AWSI(app: LambdaApp())
-//        let stringTopic = aws.pubSub.getTopic(.managed(.init(name: "strToTopic")))
-//        let intTopic = aws.pubSub.getTopic(.managed(.init(name: "converToint")))
-//
-//        let intWriter = intTopic.writer(type: Int.self, envName: "INT_WRITER_TOPIC")
-//                
-//        let stringToIntLambda = stringTopic.reader(type: String.self, functionName: "converToint")
-//        let intPrintLambda = intTopic.reader(type: Int.self, functionName: "intReader")
-//            
-//        stringToIntLambda.compactMap { str in Int(str) }.sink(write: intWriter)
-//        intPrintLambda.forEach { print($0) }
+        var description: String {
+            return rawValue
+        }
+    }
+    
+    
+    func abc() {
+        let awsApp = AWSApp()
+        let pubSub = awsApp.awsI.pubSub
+
+        let stringTopic = pubSub.managedTopic(.init(name: Topics.strToInt)) //new strings
+        let intTopic = pubSub.managedTopic(.init(name: Topics.converToint)) //strings converted to int
+
+        let intWriter = intTopic.writer(Int.self) //save as ints
+                
+        let stringToIntLambda = stringTopic.reader(String.self, lambdaName: Functions.converToint)
+        let intPrintLambda = intTopic.reader(Int.self, lambdaName: Functions.intReader)
+            
+        stringToIntLambda.compactMap { str in Int(str) }.sink(write: intWriter)
+        intPrintLambda.forEach { print($0) }
     }
     
 }

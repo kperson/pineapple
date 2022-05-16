@@ -4,15 +4,25 @@ import SotoSNS
 
 public class AWSI {
     
+
+    
     public struct Context {
         public let app: LambdaApp
         public let nameResolver: NameResolver
+        public let envNameGenerator: EnvNameGenerator
         public let cloudBuilder: CloudBuilder
         public let sns: SNS
         
-        init(app: LambdaApp, nameResolver: NameResolver, cloudBuilder: CloudBuilder, sns: SNS) {
+        init(
+            app: LambdaApp,
+            nameResolver: NameResolver,
+            envNameGenerator: EnvNameGenerator,
+            cloudBuilder: CloudBuilder,
+            sns: SNS
+        ) {
             self.app = app
             self.nameResolver = nameResolver
+            self.envNameGenerator = envNameGenerator
             self.cloudBuilder = cloudBuilder
             self.sns = sns
         }
@@ -21,6 +31,7 @@ public class AWSI {
     public let app: LambdaApp
     public let pubSub: PubSub
     public let nameResolver: NameResolver = NameResolver()
+    public let envNameGenerator: EnvNameGenerator = EnvNameGenerator()
     public let client: AWSClient
     public let context: Context
     public let cloudBuilder = CloudBuilder()
@@ -34,6 +45,7 @@ public class AWSI {
         self.context = Context(
             app: app,
             nameResolver: nameResolver,
+            envNameGenerator: envNameGenerator,
             cloudBuilder: cloudBuilder,
             sns: SNS(client: self.client)
         )
