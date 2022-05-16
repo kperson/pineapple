@@ -120,11 +120,11 @@ public class ApiGatewayEventHandler: LambdaAppEventHandler {
 
 public extension LambdaApp {
 
-    func addApiGateway(_ handlerKey: String, _ handler: ApiGatewayHandler) {
+    func addApiGateway(_ handlerKey: CustomStringConvertible, _ handler: ApiGatewayHandler) {
         self.addHandler(handlerKey, ApiGatewayEventHandler(handler))
     }
     
-    func addApiGateway(_ handlerKey: String, _ handler: @escaping ApiGatewayEventHandler.Handler) {
+    func addApiGateway(_ handlerKey: CustomStringConvertible, _ handler: @escaping ApiGatewayEventHandler.Handler) {
         self.addApiGateway(handlerKey, ApiGatewayEventHandler.AsyncApiGatewayHandler(handler: handler))
     }
     

@@ -77,15 +77,15 @@ public typealias DyanmoEventHandler = RecordsAppsEventHandler<DynamoStreamRecord
 
 public extension LambdaApp {
 
-    func addDynamoHandler(_ handlerKey: String, _ handler: DyanmoEventHandler) {
+    func addDynamoHandler(_ handlerKey: CustomStringConvertible, _ handler: DyanmoEventHandler) {
         self.addHandler(handlerKey, handler)
     }
     
-    func addDynamoHandler(_ handlerKey: String, _ handler: @escaping DyanmoEventHandler.Handler) {
+    func addDynamoHandler(_ handlerKey: CustomStringConvertible, _ handler: @escaping DyanmoEventHandler.Handler) {
         self.addDynamoHandler(handlerKey, DyanmoEventHandler(handler))
     }
     
-    func addDynamoBodyHandler(_ handlerKey: String, _ handler: @escaping DyanmoEventHandler.BodyHandler) {
+    func addDynamoBodyHandler(_ handlerKey: CustomStringConvertible, _ handler: @escaping DyanmoEventHandler.BodyHandler) {
         self.addDynamoHandler(handlerKey) { items in
             try await handler(items.bodyRecords())
         }

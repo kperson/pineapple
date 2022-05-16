@@ -10,7 +10,7 @@ public struct HTTPResponse: Codable {
     
     public init(
         statusCode: Int,
-        body: Data?,
+        body: Data? = nil,
         headers: [String : String] = [:],
         multiValueHeaders: [String : [String]] = [:],
         isBase64Encoded: Bool = true

@@ -1,7 +1,7 @@
 import Foundation
 
 public typealias TopicName = String
-public typealias TopicArn = TerraformValue<String>
+public typealias TopicArn = BuildValue<String>
 
 public struct SNSTopic: Hashable, Equatable {
         

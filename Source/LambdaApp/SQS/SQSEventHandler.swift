@@ -163,15 +163,15 @@ public typealias SQSEventHandler = RecordsAppsEventHandler<SQSRecord, Void>
 
 public extension LambdaApp {
 
-    func addSQSHandler(_ handlerKey: String, _ handler: SQSEventHandler) {
+    func addSQSHandler(_ handlerKey: CustomStringConvertible, _ handler: SQSEventHandler) {
         self.addHandler(handlerKey, handler)
     }
     
-    func addSQSHandler(_ handlerKey: String, _ handler: @escaping SQSEventHandler.Handler) {
+    func addSQSHandler(_ handlerKey: CustomStringConvertible, _ handler: @escaping SQSEventHandler.Handler) {
         self.addSQSHandler(handlerKey, SQSEventHandler(handler))
     }
     
-    func addSQSBodyHandler(_ handlerKey: String, _ handler: @escaping SQSEventHandler.BodyHandler) {
+    func addSQSBodyHandler(_ handlerKey: CustomStringConvertible, _ handler: @escaping SQSEventHandler.BodyHandler) {
         addSQSHandler(handlerKey) { items in
             try await handler(items.bodyRecords())
         }

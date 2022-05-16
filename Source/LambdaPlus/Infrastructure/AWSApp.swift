@@ -7,6 +7,7 @@ public class AWSApp {
     
     public let app: LambdaApp
     public let awsI: AWSI
+    public static let generateInfrastructureEnv = "GENERATE_INFRASTRUCTURE"
     
     public init(
         app: LambdaApp = LambdaApp(),
@@ -25,7 +26,7 @@ public class AWSApp {
     }
     
     public func run() {
-        if let gen = ProcessInfo.processInfo.environment["GENERATE_INFRASTRUCTURE"], gen == "1" {
+        if let gen = ProcessInfo.processInfo.environment[Self.generateInfrastructureEnv], gen == "1" {
             generateInfrastructure()
         }
         else {

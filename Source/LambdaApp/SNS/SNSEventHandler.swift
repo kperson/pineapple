@@ -84,15 +84,15 @@ public typealias SNSEventHandler = RecordsAppsEventHandler<SNSRecord, Void>
 
 public extension LambdaApp {
 
-    func addSNSHandler(_ handlerKey: String, _ handler: SNSEventHandler) {
+    func addSNSHandler(_ handlerKey: CustomStringConvertible, _ handler: SNSEventHandler) {
         addHandler(handlerKey, handler)
     }
     
-    func addSNSHandler(_ handlerKey: String, _ handler: @escaping SNSEventHandler.Handler) {
+    func addSNSHandler(_ handlerKey: CustomStringConvertible, _ handler: @escaping SNSEventHandler.Handler) {
         addSNSHandler(handlerKey, SNSEventHandler(handler))
     }
     
-    func addSNSBodyHandler(_ handlerKey: String, _ handler: @escaping SNSEventHandler.BodyHandler) {
+    func addSNSBodyHandler(_ handlerKey: CustomStringConvertible, _ handler: @escaping SNSEventHandler.BodyHandler) {
         addSNSHandler(handlerKey) { items in
             try await handler(items.bodyRecords())
         }

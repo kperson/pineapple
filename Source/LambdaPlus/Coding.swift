@@ -12,7 +12,7 @@ public protocol Encode {
 
 public class FuncEncode<In, Out>: Encode {
 
-    let handler: (In) throws -> Out
+    private let handler: (In) throws -> Out
     
     public init(_ handler: @escaping (In) throws -> Out) {
         self.handler = handler
@@ -35,7 +35,7 @@ public protocol Decode {
 
 public class FuncDecode<In, Out>: Decode {
 
-    let handler: (In) throws -> Out
+    private let handler: (In) throws -> Out
     
     public init(_ handler: @escaping (In) throws -> Out) {
         self.handler = handler
@@ -51,7 +51,7 @@ public class JSONEncode<In: Encodable>: Encode {
     
     public typealias Out = Data
     
-    let encoder: JSONEncoder
+    private let encoder: JSONEncoder
         
     public init(encoder: JSONEncoder?) {
         self.encoder = encoder ?? JSONEncoder()
@@ -67,7 +67,7 @@ public class JSONDecode<Out: Decodable>: Decode {
     
     public typealias In = Data
     
-    let decoder: JSONDecoder
+    private let decoder: JSONDecoder
     
     public init(decoder: JSONDecoder?) {
         self.decoder = decoder ?? JSONDecoder()
@@ -82,37 +82,46 @@ public class JSONDecode<Out: Decodable>: Decode {
 class Demo {
     
     enum Topics: String, CustomStringConvertible {
-        case strToInt
-        case converToint
-        var description: String {
-            return rawValue
-        }
-    }
-    
-    enum Functions: String, CustomStringConvertible {
-        case converToint
-        case intReader
+        case allStrings
+        case stringsConvertedToInts
         
         var description: String {
             return rawValue
         }
     }
     
+    enum Functions: String, CustomStringConvertible {
+        case stringToInt
+        case printInt
+        case publishString
+        
+        var description: String {
+            return rawValue
+        }
+    }
     
     func abc() {
         let awsApp = AWSApp()
         let pubSub = awsApp.awsI.pubSub
 
-        let stringTopic = pubSub.managedTopic(.init(name: Topics.strToInt)) //new strings
-        let intTopic = pubSub.managedTopic(.init(name: Topics.converToint)) //strings converted to int
+        let stringTopic = pubSub.managedTopic(.init(name: Topics.allStrings))
+        let intTopic = pubSub.managedTopic(.init(name: Topics.stringsConvertedToInts))
 
-        let intWriter = intTopic.writer(Int.self) //save as ints
-                
-        let stringToIntLambda = stringTopic.reader(String.self, lambdaName: Functions.converToint)
-        let intPrintLambda = intTopic.reader(Int.self, lambdaName: Functions.intReader)
-            
-        stringToIntLambda.compactMap { str in Int(str) }.sink(write: intWriter)
-        intPrintLambda.forEach { print($0) }
+        let stringWriter = stringTopic.writer(String.self)
+        let intWriter = intTopic.writer(Int.self)
+        let stringReader = stringTopic.reader(String.self, lambdaName: Functions.stringToInt)
+        let intReader = intTopic.reader(Int.self, lambdaName: Functions.printInt)
+
+        
+        awsApp.app.addApiGateway(Functions.publishString) { request in
+            if let str = String(data: request.body, encoding: .utf8) {
+                try await stringWriter.write(value: str)
+            }
+            return HTTPResponse(statusCode: 204)
+        }
+        
+        stringReader.compactMap { str in Int(str) }.sink(write: intWriter)
+        intReader.forEach { print($0) }
     }
     
 }

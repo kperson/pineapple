@@ -4,10 +4,10 @@ import LambdaApp
 
 public class PubSubRef {
     
-    public let context: AWSI.Context
+    public let context: AWSContext
     public let ref: SNSTopicRef
 
-    public init(context: AWSI.Context, ref: SNSTopicRef) {
+    public init(context: AWSContext, ref: SNSTopicRef) {
         self.context = context
         self.ref = ref
     }
@@ -49,8 +49,9 @@ public class PubSubRef {
         targetArnEnvName: CustomStringConvertible? = nil,
         encode: ((T) throws -> Data)? = nil
     ) -> SNSWrite<T> {
-        let envNameRaw = targetArnEnvName.map { String(describing: $0) }
-        ?? context.envNameGenerator.topicWriterEnv(ref: self)
+        let envNameRaw = targetArnEnvName.map {
+            String(describing: $0)
+        } ?? context.envNameGenerator.topicWriterEnv(ref: self)
         
         switch ref {
         case .unmanaged(let arn):
@@ -61,33 +62,31 @@ public class PubSubRef {
                 value: context.nameResolver.interpolateTopicArn(topic.name)
             )
         }
+        let targetArn = LazyEnv.envStr(envNameRaw)
         if let e = (encode.map { FuncEncode($0) }) {
             return SNSWrite(
                 sns: context.sns,
-                targetArn: LazyEnv.envStr(envNameRaw),
+                targetArn: targetArn,
                 encode: e
             )
         }
         else {
             return SNSWrite(
                 sns: context.sns,
-                targetArn: LazyEnv.envStr(envNameRaw),
+                targetArn: targetArn,
                 encode: JSONEncode(encoder: JSONEncoder())
             )
         }
-        
-    
-
     }
     
 }
 
 public class PubSub {
     
-    public let context: AWSI.Context
+    public unowned let context: AWSContext
     private var cache: [SNSTopicRef: PubSubRef] = [:]
 
-    public init(context: AWSI.Context) {
+    public init(context: AWSContext) {
         self.context = context
     }
     

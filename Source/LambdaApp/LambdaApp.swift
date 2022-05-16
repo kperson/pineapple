@@ -71,11 +71,11 @@ public class LambdaApp: LambdaEventHandler {
         self.init(runtime: runtime, singleHandler.handleEvent)
     }
     
-    public func addHandler(_ handlerKey: String, _ handler: @escaping (LambdaEvent) -> Void) {
-        handlers[handlerKey] = handler
+    public func addHandler(_ handlerKey: CustomStringConvertible, _ handler: @escaping (LambdaEvent) -> Void) {
+        handlers[String(describing: handlerKey)] = handler
     }
     
-    public func addAsyncHandler(_ handlerKey: String, _ handler: @escaping (LambdaEvent) async throws -> LambdaResponse) {
+    public func addAsyncHandler(_ handlerKey: CustomStringConvertible, _ handler: @escaping (LambdaEvent) async throws -> LambdaResponse) {
         let h: (LambdaEvent) -> Void = { e in
             Task {
                 let rs = try await handler(e)
@@ -87,15 +87,15 @@ public class LambdaApp: LambdaEventHandler {
                 
             }
         }
-        handlers[handlerKey] = h
+        handlers[String(describing: handlerKey)] = h
     }
     
-    public func addHandler(_ handlerKey: String, _ handler: LambdaAppEventHandler) {
-        addHandler(handlerKey, handler.handleEvent)
+    public func addHandler(_ handlerKey: CustomStringConvertible, _ handler: LambdaAppEventHandler) {
+        addHandler(String(describing: handlerKey), handler.handleEvent)
     }
     
-    public func removeHandler(_ handlerKey: String) {
-        handlers.removeValue(forKey: handlerKey)
+    public func removeHandler(_ handlerKey: CustomStringConvertible) {
+        handlers.removeValue(forKey: String(describing: handlerKey))
     }
     
     public func setRunTimeLogHandler(_ handler: LambdaRuntimeLogHandler) {

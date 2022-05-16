@@ -1,23 +1,15 @@
 import Foundation
 
 public typealias EnvVarName = String
-public typealias EnvVarValue = TerraformValue<String>
+public typealias EnvVarValue = BuildValue<String>
 
-public protocol Instructions {
-    
-    var envs: [EnvVarName : EnvVarValue] { get }
-    var snsTopics: [SNSTopic] { get }
-    var snsReadLambdas: [SNSReadLambda] { get }
-    
-}
 
-public class CloudBuilder: Instructions {
+public class CloudBuilder: BuildInstructions {
     
     public var envs: [EnvVarName : EnvVarValue] = [:]
     public var snsTopics: [SNSTopic] = []
     public var snsReadLambdas: [SNSReadLambda] = []
     private(set) var allLambdaNames = Set<FunctionName>()
-    
     
     public init() {}
     
