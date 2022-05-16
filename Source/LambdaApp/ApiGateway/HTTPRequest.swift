@@ -43,7 +43,7 @@ public struct LambdaHTTPRequestBuilder: Codable {
     
 }
 
-public struct HTTPRequest {
+public struct HTTPRequest: Codable {
 
     public let httpMethod: String
     public let path: String

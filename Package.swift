@@ -8,7 +8,10 @@ let package = Package(
     ],
     products: [
         .library(name: "LambdaRuntimeAPI", targets: ["LambdaRuntimeAPI"]),
-        .library(name: "LambdaApp", targets: ["LambdaApp"])
+        .library(name: "LambdaApp", targets: ["LambdaApp"]),
+        .library(name: "Messaging", targets: ["Messaging"]),
+        .library(name: "LambdaMessaging", targets: ["LambdaMessaging"])
+
     ],
     dependencies: [
         .package(url: "https://github.com/soto-project/soto.git", .upToNextMajor(from: "5.11.0"))
@@ -24,6 +27,21 @@ let package = Package(
                 "LambdaRuntimeAPI"
             ],
             path: "./Source/LambdaApp"
+        ),
+        .target(
+            name: "Messaging",
+            dependencies: [
+            ],
+            path: "./Source/Messaging"
+        ),
+        .target(
+            name: "LambdaMessaging",
+            dependencies: [
+                "Messaging",
+                .product(name: "SotoSQS", package: "soto"),
+                .product(name: "SotoSNS", package: "soto")
+            ],
+            path: "./Source/LambdaMessaging"
         ),
         .target(
             name: "SystemTestsCommon",

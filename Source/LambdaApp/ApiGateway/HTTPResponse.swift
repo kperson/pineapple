@@ -1,6 +1,6 @@
 import Foundation
 
-public struct HTTPResponse {
+public struct HTTPResponse: Codable {
     
     let statusCode: Int
     let body: Data

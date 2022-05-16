@@ -127,7 +127,6 @@ resource "aws_cloudwatch_event_rule" "rule" {
 resource "aws_cloudwatch_event_target" "event_target" {
   rule = aws_cloudwatch_event_rule.rule.name
   arn  = aws_lambda_function.lambda.arn
-  tags = var.tags
 }
 
 resource "aws_lambda_permission" "lambda_permission" {

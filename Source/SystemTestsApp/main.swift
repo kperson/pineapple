@@ -72,10 +72,11 @@ if let verifyTable = ProcessInfo.processInfo.environment["VERIFY_TABLE"] {
     }
     
     app.addApiGateway("test.http") { request in
-        HTTPResponse(
+        let encoder = JSONEncoder()
+        return try HTTPResponse(
             statusCode: 200,
-            body: "hello_word".data(using: .utf8),
-            headers: ["Content-Type" :  "text/plain"]
+            body: encoder.encode(request),
+            headers: ["Content-Type" :  "application/json"]
         )
     }
     
