@@ -8,3 +8,10 @@ public protocol BuildInstructions {
     var snsReadLambdas: [SNSReadLambda] { get }
     
 }
+
+
+public protocol BuildInstructionsExecutor: AnyObject {
+        
+    func build(instructions: BuildInstructions)
+    
+}

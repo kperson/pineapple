@@ -13,7 +13,7 @@ let package = Package(
         .library(name: "LambdaPlus", targets: ["LambdaPlus"])
     ],
     dependencies: [
-        .package(url: "https://github.com/soto-project/soto.git", .upToNextMajor(from: "5.11.0"))
+        .package(url: "https://github.com/soto-project/soto.git", .upToNextMajor(from: "5.13.0"))
     ],
     targets: [
         .target(
@@ -68,6 +68,13 @@ let package = Package(
                 .product(name: "SotoS3", package: "soto")
             ],
             path: "./Tests/SystemTests"
+        ),
+        .testTarget(
+            name: "LambdaPlusTests",
+            dependencies: [
+//                "LambdaPlus"
+            ],
+            path: "./Tests/LambdaPlusTests"
         )
     ],
     swiftLanguageVersions: [.v5]
