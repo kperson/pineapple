@@ -19,13 +19,16 @@ public class TerraformExecutor: BuildInstructionsExecutor {
     public let appName: String
     public let nameResolver: NameResolver
     public let handlerEnv: String
+    public let outDir: URL
     
     public init(
         appName: String = "app",
         handlerEnv: String = "MY_HANDLER",
+        outDir: URL? = nil,
         defaults: ExecutorDefaults = ExecutorDefaults(),
         nameResolver: NameResolver = NameResolver()
     ) {
+        self.outDir = outDir ?? URL(fileURLWithPath: "Build/")
         self.defaults = defaults
         self.handlerEnv = handlerEnv
         self.appName = appName
@@ -39,6 +42,21 @@ public class TerraformExecutor: BuildInstructionsExecutor {
     private var roleAttachements = Set<String>()
     
     public func build(instructions: BuildInstructions) {
+        
+    }
+    
+    public func removeManagedFiles() throws {
+        let manager = FileManager.default
+        let contents = try manager.contentsOfDirectory(
+            at: outDir,
+            includingPropertiesForKeys: nil
+        )
+        for url in contents {
+            let fileBaseName = url.lastPathComponent
+            if fileBaseName.hasSuffix("tf") && fileBaseName.hasPrefix("pineapple-") {
+                try manager.removeItem(at: url)
+            }
+        }
     }
     
     public func buildFiles(instructions: BuildInstructions) -> [BuildFile] {
