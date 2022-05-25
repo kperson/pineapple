@@ -1,6 +1,23 @@
 import Foundation
 import LambdaApp
 
+public struct LambdaSettings: Hashable, Equatable {
+    
+    public let memory: Int?
+    public let timeout: Int?
+    public let environmentVariables: [String : String]
+    
+    public init(
+        memory: Int? = nil,
+        timeout: Int? = nil,
+        environmentVariables: [String : String] = [:]
+    ) {
+        self.memory = memory
+        self.timeout = timeout
+        self.environmentVariables = environmentVariables
+    }
+    
+}
 
 public class PubSubRef {
     
@@ -15,29 +32,32 @@ public class PubSubRef {
     public func reader<T: Decodable>(
         _ type: T.Type,
         lambdaName: CustomStringConvertible,
+        settings: LambdaSettings = LambdaSettings(),
         decode: ((Data) throws -> T)? = nil
     ) -> SNSRead<T> {
         let fName = String(describing: lambdaName)
+        let fHandler = context.nameResolver.functionHandler(fName)
         switch ref {
         case .unmanaged(let arn):
-            context.cloudBuilder.addSNSReadLambda(.init(topicArn: arn, functionName: fName))
+            context.cloudBuilder.addSNSReadLambda(.init(topicArn: arn, functionName: fName, settings: settings))
         case .managed(let topic):
             context.cloudBuilder.addSNSReadLambda(.init(
                 topicArn: context.nameResolver.interpolateTopicArn(topic.name),
-                functionName: fName
+                functionName: fName,
+                settings: settings
             ))
         }
         if let d = (decode.map { FuncDecode($0) }) {
             return SNSRead<T>(
                 app: context.app,
-                functionName: fName,
+                functionName: fHandler,
                 decode: d
             )
         }
         else {
             return SNSRead<T>(
                 app: context.app,
-                functionName: fName,
+                functionName: fHandler,
                 decode: JSONDecode(decoder: JSONDecoder())
             )
         }

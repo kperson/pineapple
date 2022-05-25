@@ -37,6 +37,7 @@ let package = Package(
             name: "LambdaPlus",
             dependencies: [
                 "Messaging",
+                "LambdaApp",
                 .product(name: "SotoSQS", package: "soto"),
                 .product(name: "SotoSNS", package: "soto")
             ],
@@ -72,7 +73,7 @@ let package = Package(
         .testTarget(
             name: "LambdaPlusTests",
             dependencies: [
-//                "LambdaPlus"
+                "LambdaPlus"
             ],
             path: "./Tests/LambdaPlusTests"
         )

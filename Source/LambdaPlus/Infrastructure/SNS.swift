@@ -27,10 +27,12 @@ public struct SNSReadLambda: Hashable, Equatable {
     
     let topicArn: TopicArn
     let functionName: FunctionName
+    let settings: LambdaSettings
     
-    init(topicArn: TopicArn, functionName: String) {
+    init(topicArn: TopicArn, functionName: String, settings: LambdaSettings) {
         self.topicArn = topicArn
         self.functionName = functionName
+        self.settings = settings
     }
     
 }
