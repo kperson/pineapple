@@ -12,6 +12,6 @@ public protocol BuildInstructions {
 
 public protocol BuildInstructionsExecutor: AnyObject {
         
-    func build(instructions: BuildInstructions)
+    func build(instructions: BuildInstructions) throws
     
 }

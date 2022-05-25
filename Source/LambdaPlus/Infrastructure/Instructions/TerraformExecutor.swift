@@ -41,8 +41,10 @@ public class TerraformExecutor: BuildInstructionsExecutor {
     
     private var roleAttachements = Set<String>()
     
-    public func build(instructions: BuildInstructions) {
-        
+    public func build(instructions: BuildInstructions) throws {
+        try removeManagedFiles()
+        let files = buildFiles(instructions: instructions)
+        try files.saveFiles(baseDir: outDir)
     }
     
     public func removeManagedFiles() throws {
@@ -52,8 +54,9 @@ public class TerraformExecutor: BuildInstructionsExecutor {
             includingPropertiesForKeys: nil
         )
         for url in contents {
-            let fileBaseName = url.lastPathComponent
-            if fileBaseName.hasSuffix("tf") && fileBaseName.hasPrefix("pineapple-") {
+            let fileBaseName = url.lastPathComponent.lowercased()
+            if  fileBaseName.hasSuffix(".tf")
+                && (fileBaseName.hasPrefix("pineapple-") || fileBaseName.hasPrefix("pineapple_")) {
                 try manager.removeItem(at: url)
             }
         }
