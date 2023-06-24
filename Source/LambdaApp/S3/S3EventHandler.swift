@@ -21,6 +21,7 @@ public protocol S3BodyAttributes {
     var s3ObjectVersionId: String? { get }
     var s3ObjectSequencer: String { get }
     var eventClass: S3Record.S3EventClass { get }
+    
 }
 
 public struct S3Record: S3RecordMeta, S3BodyAttributes, RecordsItem {

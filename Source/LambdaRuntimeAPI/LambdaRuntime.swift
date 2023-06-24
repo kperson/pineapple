@@ -59,15 +59,16 @@ public struct LambdaError: Codable, Error, Equatable {
 }
 
 
+
 public class LambdaEvent {
 
     public let requestId: String
     public let payload: LambdaPayload
     public private(set) var isComplete = false
     
-    let runTime: LambdaRuntime
+    let runTime: Runtime
     
-    public init(requestId: String, payload: LambdaPayload, runTime: LambdaRuntime) {
+    public init(requestId: String, payload: LambdaPayload, runTime: Runtime) {
         self.requestId = requestId
         self.payload = payload
         self.runTime = runTime
@@ -138,6 +139,7 @@ public enum LambdaLogEvent {
     case requestSucceeded(path: String, response: LambdaRequestResponse)
     case requestFailed(path: String, error: Error)
     case rawLog(level: RuntimeLogLevel, item: Any)
+    
 }
 
 
@@ -177,7 +179,6 @@ public protocol Runtime {
 
 public class LambdaRuntime: Runtime {
 
-    
     public weak var eventHandler: LambdaEventHandler?
     public weak var logHandler: LambdaRuntimeLogHandler?
 
@@ -347,7 +348,5 @@ public class LambdaRuntime: Runtime {
         })
         task.resume()
     }
-    
-    
     
 }

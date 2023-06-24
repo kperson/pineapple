@@ -8,7 +8,7 @@ class DynamoStreamTestCase: RemoteTestCase {
     
     let table = "pineapplTest"
     let dynamo = DynamoDB(client: AWSClient(httpClientProvider: .createNew))
-    let expiration = Int(Date().timeIntervalSince1970) + 3600
+    let expiration = Int(Date().timeIntervalSince1970) + 60
     
     func testCreateUpdateAndDelete() async throws {
         let message = Verify(verifyKey: verifier.testRunKey, value: "hello world", ttl: expiration)

@@ -18,9 +18,9 @@ public struct Verify: Codable {
 
 public class RemoteVerify {
     
-    let dynamoDB: DynamoDB
+    public let dynamoDB: DynamoDB
     public let testRunKey: String
-    let tableName: String
+    public let tableName: String
     
     public init(dynamoDB: DynamoDB, testRunKey: String, tableName: String) {
         self.dynamoDB = dynamoDB
@@ -46,10 +46,10 @@ public class RemoteVerify {
             .init(key: ["verifyKey" : .s(vKey)], tableName: tableName),
             type: Verify.self
         )
-        if let value = result.item?.value {
-            return value
+        if let item = result.item, TimeInterval(item.ttl) >= Date().timeIntervalSince1970 {
+            return item.value
         }
-        if numAttempts <= 1 {
+        else if numAttempts <= 1 {
             return nil
         }
         else {

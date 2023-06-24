@@ -91,19 +91,19 @@ module "http_test" {
   }
 }
 
-# module "cron_test" {
-#   source           = "../terraform-support/cron-lambda"
-#   depends_on       = [module.ecr_push]
-#   schedule_expression = "cron(* * * * ? *)" // every minute
-#   function_name    = "pineapple-cron"
-#   role             = module.lambda_role_arn.out
-#   ecr_repo_name    = module.ecr_push.ecr_repo_name
-#   ecr_repo_tag     = module.ecr_push.ecr_repo_tag
-#   memory_size      = 256
-#   timeout          = 30
+module "cron_test" {
+   source           = "../terraform-support/cron-lambda"
+   depends_on       = [module.ecr_push]
+   schedule_expression = "cron(* * * * ? *)" // every minute
+   function_name    = "pineapple-cron"
+   role             = module.lambda_role_arn.out
+   ecr_repo_name    = module.ecr_push.ecr_repo_name
+   ecr_repo_tag     = module.ecr_push.ecr_repo_tag
+   memory_size      = 256
+   timeout          = 30
 
-#   env = {
-#     MY_HANDLER   = "test.cron"
-#     VERIFY_TABLE = module.db_verify.id
-#   }
-# }
+   env = {
+     MY_HANDLER   = "test.cron"
+     VERIFY_TABLE = module.db_verify.id
+   }
+ }
