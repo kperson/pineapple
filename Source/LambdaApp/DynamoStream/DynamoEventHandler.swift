@@ -29,7 +29,6 @@ public struct DynamoStreamRecord: DynamoStreamRecordMeta, DynamoStreamBodyAttrib
     public let approximateCreationDateTime: Date
     
     public init?(dict: [String : Any]) {
-        print(dict)
         if
             let eventName = dict["eventName"] as? String,
             let eventSourceARN = dict["eventSourceARN"] as? String,

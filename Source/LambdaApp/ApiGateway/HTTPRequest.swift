@@ -1,12 +1,12 @@
 import Foundation
 
-public struct LambdaPathParameters: Codable {
+public struct LambdaPathParameters: Codable, Equatable {
     
     let proxy: String?
     
 }
 
-public struct LambdaHTTPRequestBuilder: Codable {
+public struct LambdaHTTPRequestBuilder: Codable, Equatable {
 
     public let httpMethod: String
     public let pathParameters: LambdaPathParameters
@@ -43,7 +43,7 @@ public struct LambdaHTTPRequestBuilder: Codable {
     
 }
 
-public struct HTTPRequest: Codable {
+public struct HTTPRequest: Codable, Equatable {
 
     public let httpMethod: String
     public let path: String

@@ -63,6 +63,7 @@ let package = Package(
             name: "SystemTests",
             dependencies: [
                 "SystemTestsCommon",
+                "LambdaApp",
                 .product(name: "SotoDynamoDB", package: "soto"),
                 .product(name: "SotoSQS", package: "soto"),
                 .product(name: "SotoSNS", package: "soto"),

@@ -1,25 +1,27 @@
 import Foundation
 
-public struct HTTPResponse: Codable {
+public struct HTTPResponse {
+    
+    public enum Body {
+        case string(_ value: String)
+        case data(_ value: Data)
+    }
     
     let statusCode: Int
-    let body: Data
+    let body: Body
     let headers: [String : String]
     let multiValueHeaders: [String : [String]]
-    let isBase64Encoded: Bool
     
     public init(
         statusCode: Int,
-        body: Data? = nil,
+        body: Body = .data(Data()),
         headers: [String : String] = [:],
-        multiValueHeaders: [String : [String]] = [:],
-        isBase64Encoded: Bool = true
+        multiValueHeaders: [String : [String]] = [:]
     ) {
         self.statusCode = statusCode
-        self.body = body ?? Data()
+        self.body = body
         self.headers = headers
         self.multiValueHeaders = multiValueHeaders
-        self.isBase64Encoded = isBase64Encoded
     }
     
 }

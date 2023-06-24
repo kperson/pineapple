@@ -17,16 +17,21 @@ struct RawLambdaHTTPResponse: Codable {
     
     init(
         statusCode: Int,
-        body: Data,
+        body: HTTPResponse.Body,
         headers: [String : String],
         multiValueHeaders: [String : [String]]
     ) {
-        
         self.statusCode = statusCode
-        self.body = body.base64EncodedString()
+        switch body {
+        case .data(let value):
+            self.body = value.base64EncodedString()
+            self.isBase64Encoded = true
+        case .string(let value):
+            self.body = value
+            self.isBase64Encoded = false
+        }
         self.headers = headers
         self.multiValueHeaders = multiValueHeaders
-        self.isBase64Encoded = true
     }
     
 }
@@ -36,10 +41,12 @@ public class LambdaHttpEvent {
     static let encoder = JSONEncoder()
     let event: LambdaEvent
     public let request: HTTPRequest
+    public let base64EncodeResponse: Bool
     
-    public init(event: LambdaEvent, request: HTTPRequest) {
+    public init(event: LambdaEvent, request: HTTPRequest, base64EncodeResponse: Bool) {
         self.event = event
         self.request = request
+        self.base64EncodeResponse = base64EncodeResponse
     }
     
     public func sendError(error: Error) {
@@ -67,6 +74,7 @@ public class ApiGatewayEventHandler: LambdaAppEventHandler {
     
     public typealias Handler = (HTTPRequest) async throws -> HTTPResponse
     
+    
     class AsyncApiGatewayHandler: ApiGatewayHandler {
 
         let handler: (HTTPRequest) async throws -> HTTPResponse
@@ -83,12 +91,15 @@ public class ApiGatewayEventHandler: LambdaAppEventHandler {
     
     static let jsonDecoder = JSONDecoder()
     let handler: ApiGatewayHandler
+    public let base64EncodeResponse: Bool
     
-    public init(_ h: ApiGatewayHandler) {
+    public init(base64EncodeResponse: Bool = true, _ h: ApiGatewayHandler) {
         self.handler = h
+        self.base64EncodeResponse = true
     }
     
-    public init(_ h: @escaping (HTTPRequest) async throws -> HTTPResponse) {
+    public init(base64EncodeResponse: Bool = true, _ h: @escaping (HTTPRequest) async throws -> HTTPResponse) {
+        self.base64EncodeResponse = base64EncodeResponse
         self.handler = AsyncApiGatewayHandler { (event: HTTPRequest) in
             try await h(event)
         }
@@ -100,7 +111,7 @@ public class ApiGatewayEventHandler: LambdaAppEventHandler {
                 LambdaHTTPRequestBuilder.self,
                 from: event.payload.body
             ).build()
-            let httpEvent = LambdaHttpEvent(event: event, request: request)
+            let httpEvent = LambdaHttpEvent(event: event, request: request, base64EncodeResponse: base64EncodeResponse)
             Task {
                 do {
                     let response = try await handler.handleRequest(httpEvent.request)

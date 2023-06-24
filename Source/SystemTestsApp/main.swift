@@ -75,8 +75,8 @@ if let verifyTable = ProcessInfo.processInfo.environment["VERIFY_TABLE"] {
         let encoder = JSONEncoder()
         return try HTTPResponse(
             statusCode: 200,
-            body: encoder.encode(request),
-            headers: ["Content-Type" :  "application/json"]
+            body: .data(encoder.encode(request)),
+            headers: ["Content-Type": "application/json"]
         )
     }
     
