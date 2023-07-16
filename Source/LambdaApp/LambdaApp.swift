@@ -76,18 +76,18 @@ public class LambdaApp: LambdaEventHandler {
     }
     
     public func addAsyncHandler(_ handlerKey: CustomStringConvertible, _ handler: @escaping (LambdaEvent) async throws -> LambdaResponse) {
-        let h: (LambdaEvent) -> Void = { e in
+        let lambdaHandler: (LambdaEvent) -> Void = { event in
             Task {
-                let rs = try await handler(e)
-                switch rs {
-                case .response(payload: let r): e.sendResponse(data: r.body)
-                case .invocationError(error: let err): e.sendInvocationError(error: err)
-                case .initializationError(error: let err): e.sendInitializationError(error: err)
+                let result = try await handler(event)
+                switch result {
+                case .response(payload: let r): event.sendResponse(data: r.body)
+                case .invocationError(error: let err): event.sendInvocationError(error: err)
+                case .initializationError(error: let err): event.sendInitializationError(error: err)
                 }
                 
             }
         }
-        handlers[String(describing: handlerKey)] = h
+        handlers[String(describing: handlerKey)] = lambdaHandler
     }
     
     public func addHandler(_ handlerKey: CustomStringConvertible, _ handler: LambdaAppEventHandler) {

@@ -1,7 +1,7 @@
 import Foundation
 
 
-public protocol SNSRecordMeta {
+public protocol SNSRecordMeta: Codable {
     
     var eventSource: String { get }
     var eventSubscriptionArn: String { get }
@@ -13,13 +13,14 @@ public protocol SNSRecordMeta {
     
 }
 
-public protocol SNSBodyAttributes {
+public protocol SNSBodyAttributes: Codable {
     
     var message: String { get }
     
 }
 
-public struct SNSRecord: SNSRecordMeta, SNSBodyAttributes, RecordsItem {
+
+public struct SNSRecord: SNSRecordMeta, SNSBodyAttributes, RecordsItem, Codable {
     
             
     public typealias Meta = SNSRecordMeta

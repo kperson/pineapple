@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol S3RecordMeta {
+public protocol S3RecordMeta: Codable {
     
     var eventSource: String { get }
     var eventTime: Date { get }
@@ -10,7 +10,7 @@ public protocol S3RecordMeta {
     var userIdPrincipalId: String { get }
 }
 
-public protocol S3BodyAttributes {
+public protocol S3BodyAttributes: Codable {
     
     var eventName: String { get }
     var s3BucketName: String { get }
@@ -24,9 +24,9 @@ public protocol S3BodyAttributes {
     
 }
 
-public struct S3Record: S3RecordMeta, S3BodyAttributes, RecordsItem {
+public struct S3Record: S3RecordMeta, S3BodyAttributes, RecordsItem, Codable {
     
-    public enum S3EventClass {
+    public enum S3EventClass: Codable {
         case test
         case objectCreated
         case objectRemoved

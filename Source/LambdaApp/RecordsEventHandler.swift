@@ -27,15 +27,18 @@ public protocol RecordsEventHandler {
 
 public class RecordsAppsEventHandler<T: RecordsItem, R>: LambdaAppEventHandler {
     
-    public typealias Handler = ([Record<T.Meta, T.Body>]) async throws -> R
-    public typealias BodyHandler = ([T.Body]) async throws -> R
+
+    public typealias Body = T.Body
+    public typealias HandlerItem = Record<T.Meta, T.Body>
+    public typealias Handler = ([HandlerItem]) async throws -> R
+    public typealias BodyHandler = ([Body]) async throws -> R
     public let handler: Handler
 
     public init(_ h: @escaping Handler) {
         self.handler = h
     }
     
-    public init<H: RecordsEventHandler>(_ h: H) where H.Body == T.Body, H.Meta == T.Meta, H.Returning == R {
+    public init<H: RecordsEventHandler>(_ h: H) where H.Body == Body, H.Meta == T.Meta, H.Returning == R {
         self.handler = {
             try await h.handleEvent($0)
         }

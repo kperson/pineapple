@@ -55,4 +55,22 @@ public struct HTTPRequest: Codable, Equatable {
     public let queryStringParameters: [String : String]
     public let multiValueQueryStringParameters: [String : [String]]
     
+    public init(
+        httpMethod: String,
+        path: String,
+        headers: [String : String],
+        multiValueHeaders: [String : [String]],
+        body: Data,
+        queryStringParameters: [String : String],
+        multiValueQueryStringParameters: [String : [String]]
+    ) {
+        self.httpMethod = httpMethod
+        self.path = path
+        self.headers = headers
+        self.multiValueHeaders = multiValueHeaders
+        self.body = body
+        self.queryStringParameters = queryStringParameters
+        self.multiValueQueryStringParameters = multiValueQueryStringParameters
+    }
+    
 }

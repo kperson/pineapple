@@ -13,7 +13,8 @@ let package = Package(
         .library(name: "LambdaPlus", targets: ["LambdaPlus"])
     ],
     dependencies: [
-        .package(url: "https://github.com/soto-project/soto.git", .upToNextMajor(from: "5.13.0"))
+        .package(url: "https://github.com/soto-project/soto.git", .upToNextMajor(from: "5.13.0")),
+        .package(url: "https://github.com/cx-org/CombineX", from: "0.4.0")
     ],
     targets: [
         .target(
@@ -42,6 +43,14 @@ let package = Package(
                 .product(name: "SotoSNS", package: "soto")
             ],
             path: "./Source/LambdaPlus"
+        ),
+        .target(
+            name: "LambdaCombine",
+            dependencies: [
+                "LambdaApp",
+                .product(name: "CombineX", package: "CombineX")
+            ],
+            path: "./Source/LambdaCombine"
         ),
         .target(
             name: "SystemTestsCommon",

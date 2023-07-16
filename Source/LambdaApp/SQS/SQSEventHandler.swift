@@ -1,7 +1,7 @@
 import Foundation
 
 
-public struct SQSMessageAttributeValue {
+public struct SQSMessageAttributeValue: Codable {
     
     public let binaryListValues: [Data]
     public let binaryValue: Data?
@@ -10,7 +10,7 @@ public struct SQSMessageAttributeValue {
     public let stringListValues: [String]
     
     public let dataType: String
-    
+
     public init?(dict: [String : Any]) {
         if let dataType = dict["dataType"] as? String {
             self.dataType = dataType
@@ -52,7 +52,7 @@ public extension SQSMessageAttributeValue {
 }
 
 
-public protocol SQSRecordMeta {
+public protocol SQSRecordMeta: Codable {
     
     var awsRegion: String { get }
     var eventSource: String { get }
@@ -66,14 +66,14 @@ public protocol SQSRecordMeta {
     
 }
 
-public protocol SQSBodyAttributes {
+public protocol SQSBodyAttributes: Codable {
 
     var messageAttributes: [String : SQSMessageAttributeValue] { get }
     var body: String { get }
 
 }
 
-public struct SQSRecord: SQSRecordMeta, SQSBodyAttributes, RecordsItem {
+public struct SQSRecord: SQSRecordMeta, SQSBodyAttributes, RecordsItem, Codable {
     
         
     public typealias Meta = SQSRecordMeta
