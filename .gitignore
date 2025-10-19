@@ -1,0 +1,6 @@
+.DS_Store
+.build/
+.lambda-build/
+.swiftpm/
+.dockerignore
+q.md
