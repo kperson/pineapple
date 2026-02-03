@@ -1,27 +1,158 @@
 import Foundation
 import Logging
 
-/// Handler for SQS (Simple Queue Service) events - processes queue messages
+// MARK: - Event Handler Protocols
+
+/// Handler for SQS (Simple Queue Service) events
+///
+/// Processes messages from SQS queues. Use with `.addSQS()` or implement directly
+/// for custom SQS processing logic.
+///
+/// **Event Source:** SQS queue configured as Lambda trigger
+///
+/// **Example:**
+/// ```swift
+/// .addSQS(key: "queue-processor") { context, event in
+///     for record in event.records {
+///         context.logger.info("Message: \(record.messageId)")
+///         // Process message...
+///     }
+/// }
+/// ```
 public protocol SQSHandler: LambdaVoidEventHandler where Event == SQSEvent {}
 
-/// Handler for SNS (Simple Notification Service) events - processes notifications
+/// Handler for SNS (Simple Notification Service) events
+///
+/// Processes notifications from SNS topics. Use with `.addSNS()` or implement directly
+/// for custom SNS processing logic.
+///
+/// **Event Source:** SNS topic subscription to Lambda
+///
+/// **Example:**
+/// ```swift
+/// .addSNS(key: "notification-handler") { context, event in
+///     for record in event.records {
+///         context.logger.info("Subject: \(record.sns.subject ?? "None")")
+///         // Process notification...
+///     }
+/// }
+/// ```
 public protocol SNSHandler: LambdaVoidEventHandler where Event == SNSEvent {}
 
-/// Handler for DynamoDB stream events - processes database change events
+/// Handler for DynamoDB Stream events
+///
+/// Processes database change events from DynamoDB Streams. Use with `.addDynamoDB()`
+/// or `.addDynamoDBChangeCapture()` for type-safe CDC processing.
+///
+/// **Event Source:** DynamoDB table with Streams enabled
+///
+/// **Example:**
+/// ```swift
+/// .addDynamoDB(key: "stream-processor") { context, event in
+///     for record in event.records {
+///         context.logger.info("Event: \(record.eventName)")
+///         // Process change...
+///     }
+/// }
+/// ```
 public protocol DynamoDBHandler: LambdaVoidEventHandler where Event == DynamoDBEvent {}
 
-/// Handler for S3 bucket events - processes object created, deleted, etc.
+/// Handler for S3 bucket events
+///
+/// Processes S3 object lifecycle events (created, deleted, etc.). Use with `.addS3()`
+/// or implement directly for custom S3 event processing.
+///
+/// **Event Source:** S3 bucket event notifications to Lambda
+///
+/// **Example:**
+/// ```swift
+/// .addS3(key: "file-processor") { context, event in
+///     for record in event.records where record.isCreatedEvent {
+///         context.logger.info("New file: \(record.s3.object.key)")
+///         // Process file...
+///     }
+/// }
+/// ```
 public protocol S3Handler: LambdaVoidEventHandler where Event == S3Event {}
 
-/// Handler for API Gateway events - processes HTTP requests and returns responses
+/// Handler for API Gateway HTTP events
+///
+/// Processes HTTP requests from API Gateway and returns HTTP responses. Use with
+/// `.addAPIGateway()` for REST API endpoints.
+///
+/// **Event Source:** API Gateway (REST API or HTTP API with v1 payload format)
+///
+/// **Example:**
+/// ```swift
+/// .addAPIGateway(key: "api") { context, request in
+///     context.logger.info("Path: \(request.path)")
+///     return APIGatewayResponse(
+///         statusCode: .ok,
+///         body: "{\"message\": \"Hello\"}"
+///     )
+/// }
+/// ```
 public protocol APIGatewayHandler: LambdaEventHandler where Event == APIGatewayRequest, Output == APIGatewayResponse {}
 
-/// Handler for EventBridge/CloudWatch Events - processes custom events
+/// Handler for EventBridge/CloudWatch Events with return value
+///
+/// Processes custom events from EventBridge or CloudWatch Events and returns a string response.
+/// Uses raw string for maximum flexibility with different event schemas.
+///
+/// **Event Source:** EventBridge rule or CloudWatch Events rule
+///
+/// **Note:** For most EventBridge use cases, prefer `BasicVoidHandler` (no return value).
 public protocol BasicHandler: LambdaEventHandler where Event == String, Output == String {}
 
-/// Handler for EventBridge events with void return - fire-and-forget processing
+/// Handler for EventBridge/CloudWatch Events without return value
+///
+/// Processes custom events from EventBridge or CloudWatch Events without returning data.
+/// Uses raw string for maximum flexibility with different event schemas.
+///
+/// **Event Source:** EventBridge rule or CloudWatch Events rule (including scheduled events)
+///
+/// **Example:**
+/// ```swift
+/// .addEventBridge(key: "cron-job") { context, eventJSON in
+///     context.logger.info("Scheduled task running")
+///     // Perform scheduled work...
+/// }
+/// ```
 public protocol BasicVoidHandler: LambdaVoidEventHandler where Event == String {}
 
+/**
+ Main application class for building AWS Lambda functions with typed event handlers.
+ 
+ ## Usage Pattern
+ 
+ LambdaApp follows a two-phase lifecycle:
+ 
+ 1. **Setup Phase** (single-threaded): Register handlers using the fluent builder API
+ 2. **Runtime Phase**: Process events via the Lambda runtime
+ 
+ ```swift
+ let app = LambdaApp()
+     .addSQS(key: "queue-processor") { context, event in
+         // Handle SQS messages
+     }
+     .addS3(key: "file-processor") { context, event in
+         // Handle S3 events
+     }
+ 
+ // After run() is called, no more handlers should be registered
+ app.run(handlerKey: ProcessInfo.processInfo.environment["MY_HANDLER"])
+ ```
+ 
+ ## Thread Safety
+ 
+ This class is marked `@unchecked Sendable` with the assumption that:
+ - All handler registration (`.addSQS()`, `.addS3()`, etc.) occurs during single-threaded initialization
+ - The `run()` method is called exactly once, after all handlers are registered
+ - No handlers are added or removed after `run()` is called
+ 
+ These assumptions hold true for standard Lambda execution patterns. Do not attempt to register
+ handlers after `run()` has been called, as this may result in undefined behavior.
+ */
 public final class LambdaApp: RuntimeEventHandler, @unchecked Sendable {
     
     /// Internal storage for registered handlers with their associated keys
@@ -180,11 +311,18 @@ public final class LambdaApp: RuntimeEventHandler, @unchecked Sendable {
     }
     
     private static func processHandler(_ handler: Handler, event: LambdaEvent, logger: Logger) async throws {
-        let context = PineappleLambdaContext(
-            requestId: event.requestId,
-            headers: event.payload.headers,
-            logger: logger
-        )
+        let context: PineappleLambdaContext
+        do {
+            context = try PineappleLambdaContext(
+                requestId: event.requestId,
+                headers: event.payload.headers,
+                logger: logger
+            )
+        } catch {
+            logger.error("Failed to create Lambda context: \(error)")
+            throw LambdaError(error: error, errorType: "LambdaContextError")
+        }
+        
         switch handler {
         case .sqs(let sqsHandler):
             logger.debug("Starting SQS handler")
@@ -221,6 +359,14 @@ public final class LambdaApp: RuntimeEventHandler, @unchecked Sendable {
             logger.debug("EventBridge handler completed")
             event.sendResponse(data: Data())
             
+        case .basic(let basicHandler):
+            logger.debug("Starting basic handler")
+            let eventString = String(data: event.payload.body, encoding: .utf8) ?? ""
+            let responseString = try await basicHandler.handleEvent(context: context, event: eventString)
+            logger.debug("Basic handler completed")
+            let responseData = responseString.data(using: .utf8) ?? Data()
+            event.sendResponse(data: responseData)
+            
         case .apiGateway(let apiGatewayHandler):
             logger.debug("Starting API Gateway V1 handler")
             let apiGatewayEvent = try JSONDecoder().decode(APIGatewayRequest.self, from: event.payload.body)
@@ -228,9 +374,6 @@ public final class LambdaApp: RuntimeEventHandler, @unchecked Sendable {
             logger.debug("API Gateway V1 handler completed")
             let responseData = try JSONEncoder().encode(response)
             event.sendResponse(data: responseData)
-            
-        default:
-            throw LambdaError(errorMessage: "Handler type not implemented yet")
         }
     }
 }

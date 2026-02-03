@@ -1,0 +1,15 @@
+# Terraform Variables Configuration (Optional)
+# Copy this file to terraform.tfvars to override defaults
+#
+# Note: Terraform automatically uses AWS credential chain via:
+#   - AWS_PROFILE environment variable
+#   - AWS_REGION environment variable  
+#   - ~/.aws/credentials and ~/.aws/config files
+#   - AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables
+
+# AWS Configuration
+# aws_region = "us-east-1"  # Default, or use: export AWS_REGION=us-west-2
+
+# Test Configuration
+# test_run_key = "integration-test"  # Must match SystemTests TEST_RUN_KEY
+# log_level    = "debug"              # trace, debug, info, warning, error

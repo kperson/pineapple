@@ -39,8 +39,5 @@ if [ -d "$build_dir_full_path" ]; then
 fi
 mkdir -p $build_dir_full_path
 
-# Extract build artifacts from cache container to local filesystem
-docker run --rm -it -v $build_dir_full_path:/out/.lambda-build $cache_container cp -R /code/.lambda-build /out
-
 # Disable command tracing
 set +o xtrace

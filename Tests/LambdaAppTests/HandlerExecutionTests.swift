@@ -1,10 +1,12 @@
-import XCTest
+import Testing
 import Logging
 @testable import LambdaApp
 
-final class HandlerExecutionTests: XCTestCase {
+@Suite("Handler Execution Tests")
+struct HandlerExecutionTests {
     
-    func testHandlerClosureCapture() {
+    @Test("Handler closures are properly captured")
+    func handlerClosureCapture() {
         var capturedValue = ""
         let app = LambdaApp()
         
@@ -13,17 +15,18 @@ final class HandlerExecutionTests: XCTestCase {
         }
         
         // Verify handler was stored
-        XCTAssertNotNil(app.handler(for: "test"))
+        #expect(app.handler(for: "test") != nil)
         guard case .sqs(_) = app.handler(for: "test")! else {
-            XCTFail("Expected SQS handler")
+            Issue.record("Expected SQS handler")
             return
         }
         
         // The closure should be captured in the handler
-        XCTAssertEqual(capturedValue, "") // Not executed yet
+        #expect(capturedValue == "") // Not executed yet
     }
     
-    func testMultipleHandlerStorage() {
+    @Test("Multiple handlers can be stored simultaneously")
+    func multipleHandlerStorage() {
         let app = LambdaApp()
         
         app.addSQS(key: "sqs-test") { _, _ in }
@@ -34,34 +37,35 @@ final class HandlerExecutionTests: XCTestCase {
         
         // All handlers should be stored with correct types
         guard case .sqs(_) = app.handler(for: "sqs-test")! else {
-            XCTFail("Expected SQS handler")
+            Issue.record("Expected SQS handler")
             return
         }
         guard case .sns(_) = app.handler(for: "sns-test")! else {
-            XCTFail("Expected SNS handler")
+            Issue.record("Expected SNS handler")
             return
         }
         guard case .s3(_) = app.handler(for: "s3-test")! else {
-            XCTFail("Expected S3 handler")
+            Issue.record("Expected S3 handler")
             return
         }
         guard case .dynamodb(_) = app.handler(for: "dynamo-test")! else {
-            XCTFail("Expected DynamoDB handler")
+            Issue.record("Expected DynamoDB handler")
             return
         }
         guard case .basicVoid(_) = app.handler(for: "event-test")! else {
-            XCTFail("Expected BasicVoid handler")
+            Issue.record("Expected BasicVoid handler")
             return
         }
     }
     
-    func testHandlerTypeEnumeration() {
+    @Test("Handler types can be enumerated with pattern matching")
+    func handlerTypeEnumeration() {
         let app = LambdaApp()
         
         app.addSQS(key: "test") { _, _ in }
         
         guard let handler = app.handler(for: "test") else {
-            XCTFail("Handler not found")
+            Issue.record("Handler not found")
             return
         }
         
@@ -71,29 +75,31 @@ final class HandlerExecutionTests: XCTestCase {
             // Expected case
             break
         case .sns(_), .s3(_), .dynamodb(_), .apiGateway(_), .basic(_), .basicVoid(_):
-            XCTFail("Unexpected handler type")
+            Issue.record("Unexpected handler type")
         }
     }
     
-    func testHandlerReplacement() {
+    @Test("Handlers can be replaced")
+    func handlerReplacement() {
         let app = LambdaApp()
         
         // Add initial handler
         app.addSQS(key: "test") { _, _ in }
         guard case .sqs(_) = app.handler(for: "test")! else {
-            XCTFail("Expected SQS handler")
+            Issue.record("Expected SQS handler")
             return
         }
         
         // Replace with different type
         app.addSNS(key: "test") { _, _ in }
         guard case .sns(_) = app.handler(for: "test")! else {
-            XCTFail("Expected SNS handler after replacement")
+            Issue.record("Expected SNS handler after replacement")
             return
         }
     }
     
-    func testContextParameterPassing() {
+    @Test("Context parameter is passed to handlers")
+    func contextParameterPassing() {
         let app = LambdaApp()
         var receivedContext: LambdaContext?
         
@@ -102,7 +108,7 @@ final class HandlerExecutionTests: XCTestCase {
         }
         
         // Verify the closure signature accepts LambdaContext
-        XCTAssertNotNil(app.handler(for: "test"))
+        #expect(app.handler(for: "test") != nil)
         
         // The closure should be ready to receive context when executed
         // (We can't easily test execution without full AWS Lambda runtime setup)

@@ -15,7 +15,3 @@ module "db_verify" {
     name = "ttl"
   }
 }
-
-output "verify_table_name" {
-  value = module.db_verify.id
-}

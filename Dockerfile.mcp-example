@@ -1,0 +1,27 @@
+# Dockerfile for building and testing MCPExample
+# This is separate from the Lambda deployment Dockerfile
+
+FROM swift:6.1-amazonlinux2 as build
+
+WORKDIR /code
+
+# Copy source files
+COPY . .
+
+# Build MCPExample in release mode
+RUN swift build --product MCPExample -c release --static-swift-stdlib
+
+# Create runtime stage with minimal dependencies
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023
+
+# Copy the built binary
+COPY --from=build /code/.build/release/MCPExample /usr/local/bin/MCPExample
+
+# Make it executable
+RUN chmod +x /usr/local/bin/MCPExample
+
+# Set the entrypoint
+ENTRYPOINT ["/usr/local/bin/MCPExample"]
+
+# Default to stdio mode
+CMD ["stdio"]

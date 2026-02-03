@@ -1,0 +1,192 @@
+Building for debugging...
+[0/3] Write swift-version--58304C5D6DBC2206.txt
+[1/4] Write sources
+[3/6] Compiling MCP MCPRouter.swift
+[4/6] Emitting module MCP
+[4/7] Write Objects.LinkFileList
+[5/7] Linking MCPExample
+[6/7] Applying MCPExample
+Build of product 'MCPExample' complete! (1.44s)
+🔧 Tool 'read_file' schema: object(["required": MCP.JSONValue.array([MCP.JSONValue.string("path")]), "type": MCP.JSONValue.string("object"), "properties": MCP.JSONValue.object(["path": MCP.JSONValue.object(["type": MCP.JSONValue.string("string")])])])
+🔧 Tool 'write_file' schema: object(["required": MCP.JSONValue.array([MCP.JSONValue.string("path"), MCP.JSONValue.string("content")]), "properties": MCP.JSONValue.object(["path": MCP.JSONValue.object(["type": MCP.JSONValue.string("string")]), "content": MCP.JSONValue.object(["type": MCP.JSONValue.string("string")])]), "type": MCP.JSONValue.string("object")])
+🔧 Tool 'list_directory' schema: object(["properties": MCP.JSONValue.object(["path": MCP.JSONValue.object(["type": MCP.JSONValue.string("string")])]), "type": MCP.JSONValue.string("object"), "required": MCP.JSONValue.array([MCP.JSONValue.string("path")])])
+🗂️  File System Assistant MCP Server (HTTP)
+🌐 Starting HTTP server on http://localhost:8080
+📁 Working directory: /Users/keltonperson/opensource/pineapple
+🔒 Security: Only allows access to current directory and subdirectories
+2025-10-20T14:37:44-0500 info Hummingbird: [HummingbirdCore] Server started and listening on localhost:8080
+📥 Request Body: {"jsonrpc":"2.0","id":"1","method":"tools/list"}
+📥 Request Path: /abc
+📥 Request Headers: ["Content-Length": "48", "Accept": "*/*", "Content-Type": "application/json", "User-Agent": "curl/8.7.1"]
+🔍 Encoding tool: write_file, schema: object(["required": MCP.JSONValue.array([MCP.JSONValue.string("path"), MCP.JSONValue.string("content")]), "properties": MCP.JSONValue.object(["path": MCP.JSONValue.object(["type": MCP.JSONValue.string("string")]), "content": MCP.JSONValue.object(["type": MCP.JSONValue.string("string")])]), "type": MCP.JSONValue.string("object")])
+🔍 Encoding tool: list_directory, schema: object(["properties": MCP.JSONValue.object(["path": MCP.JSONValue.object(["type": MCP.JSONValue.string("string")])]), "type": MCP.JSONValue.string("object"), "required": MCP.JSONValue.array([MCP.JSONValue.string("path")])])
+🔍 Encoding tool: read_file, schema: object(["required": MCP.JSONValue.array([MCP.JSONValue.string("path")]), "type": MCP.JSONValue.string("object"), "properties": MCP.JSONValue.object(["path": MCP.JSONValue.object(["type": MCP.JSONValue.string("string")])])])
+📤 Response Body: {"result":{"tools":[{"name":"write_file","inputSchema":{"properties":{"content":{"type":"string"},"path":{"type":"string"}},"type":"object","required":["path","content"]},"description":"Write content to a file"},{"name":"list_directory","inputSchema":{"required":["path"],"type":"object","properties":{"path":{"type":"string"}}},"description":"List contents of a directory"},{"name":"read_file","inputSchema":{"required":["path"],"type":"object","properties":{"path":{"type":"string"}}},"description":"Read contents of a file"}]},"jsonrpc":"2.0","id":"1"}
+📥 Request Body: {"jsonrpc":"2.0","id":6,"method":"tools/list","params":{"_meta":{"progressToken":6}}}
+📥 Request Path: /abc
+📥 Request Headers: ["User-Agent": "PostmanRuntime/7.37.3", "Accept-Encoding": "gzip, deflate, br", "Cache-Control": "no-cache", "Connection": "keep-alive", "Content-Length": "85", "Accept": "*/*", "Content-Type": "application/json", "Postman-Token": "f775123c-c307-4226-9685-c8c5c29f4234"]
+🔍 Encoding tool: write_file, schema: object(["required": MCP.JSONValue.array([MCP.JSONValue.string("path"), MCP.JSONValue.string("content")]), "properties": MCP.JSONValue.object(["path": MCP.JSONValue.object(["type": MCP.JSONValue.string("string")]), "content": MCP.JSONValue.object(["type": MCP.JSONValue.string("string")])]), "type": MCP.JSONValue.string("object")])
+🔍 Encoding tool: list_directory, schema: object(["properties": MCP.JSONValue.object(["path": MCP.JSONValue.object(["type": MCP.JSONValue.string("string")])]), "type": MCP.JSONValue.string("object"), "required": MCP.JSONValue.array([MCP.JSONValue.string("path")])])
+🔍 Encoding tool: read_file, schema: object(["required": MCP.JSONValue.array([MCP.JSONValue.string("path")]), "type": MCP.JSONValue.string("object"), "properties": MCP.JSONValue.object(["path": MCP.JSONValue.object(["type": MCP.JSONValue.string("string")])])])
+📤 Response Body: {"jsonrpc":"2.0","id":6,"result":{"tools":[{"description":"Write content to a file","inputSchema":{"required":["path","content"],"type":"object","properties":{"path":{"type":"string"},"content":{"type":"string"}}},"name":"write_file"},{"description":"List contents of a directory","inputSchema":{"properties":{"path":{"type":"string"}},"type":"object","required":["path"]},"name":"list_directory"},{"description":"Read contents of a file","inputSchema":{"required":["path"],"type":"object","properties":{"path":{"type":"string"}}},"name":"read_file"}]}}
+📥 Request Body: {"jsonrpc":"2.0","id":6,"method":"tools/list","params":{"_meta":{"progressToken":6}}}
+📥 Request Path: /abc
+📥 Request Headers: ["Content-Type": "application/json", "Cache-Control": "no-cache", "Content-Length": "85", "Accept": "*/*", "User-Agent": "PostmanRuntime/7.37.3", "Accept-Encoding": "gzip, deflate, br", "Connection": "keep-alive", "Postman-Token": "a7f57bcb-d3f8-422a-ac25-3f5627ff07d3"]
+🔍 Encoding tool: write_file, schema: object(["required": MCP.JSONValue.array([MCP.JSONValue.string("path"), MCP.JSONValue.string("content")]), "properties": MCP.JSONValue.object(["path": MCP.JSONValue.object(["type": MCP.JSONValue.string("string")]), "content": MCP.JSONValue.object(["type": MCP.JSONValue.string("string")])]), "type": MCP.JSONValue.string("object")])
+🔍 Encoding tool: list_directory, schema: object(["properties": MCP.JSONValue.object(["path": MCP.JSONValue.object(["type": MCP.JSONValue.string("string")])]), "type": MCP.JSONValue.string("object"), "required": MCP.JSONValue.array([MCP.JSONValue.string("path")])])
+🔍 Encoding tool: read_file, schema: object(["required": MCP.JSONValue.array([MCP.JSONValue.string("path")]), "type": MCP.JSONValue.string("object"), "properties": MCP.JSONValue.object(["path": MCP.JSONValue.object(["type": MCP.JSONValue.string("string")])])])
+📤 Response Body: {"jsonrpc":"2.0","result":{"tools":[{"name":"write_file","description":"Write content to a file","inputSchema":{"required":["path","content"],"type":"object","properties":{"path":{"type":"string"},"content":{"type":"string"}}}},{"name":"list_directory","description":"List contents of a directory","inputSchema":{"properties":{"path":{"type":"string"}},"type":"object","required":["path"]}},{"name":"read_file","description":"Read contents of a file","inputSchema":{"required":["path"],"type":"object","properties":{"path":{"type":"string"}}}}]},"id":6}
+📥 Request Body: {"jsonrpc":"2.0","id":6,"method":"tools/list","params":{"_meta":{"progressToken":6}}}
+📥 Request Path: /abc/initialize
+📥 Request Headers: ["Accept": "*/*", "Content-Type": "application/json", "User-Agent": "PostmanRuntime/7.37.3", "Cache-Control": "no-cache", "Postman-Token": "fda29760-f70b-4086-a4c6-09684b3757f7", "Accept-Encoding": "gzip, deflate, br", "Connection": "keep-alive", "Content-Length": "85"]
+📤 Response Body: {
+    "jsonrpc": "2.0",
+    "id": null,
+    "error": {
+        "code": -32601,
+        "message": "No MCP server found for path: /abc/initialize"
+    }
+}
+📥 Request Body: {"jsonrpc":"2.0","id":6,"method":"tools/list","params":{"_meta":{"progressToken":6}}}
+📥 Request Path: /abc/initialize
+📥 Request Headers: ["User-Agent": "PostmanRuntime/7.37.3", "Accept-Encoding": "gzip, deflate, br", "Cache-Control": "no-cache", "Connection": "keep-alive", "Content-Length": "85", "Accept": "*/*", "Content-Type": "application/json", "Postman-Token": "d9e1adc5-83f9-4a40-a0f7-b6f3a8702859"]
+📤 Response Body: {
+    "jsonrpc": "2.0",
+    "id": null,
+    "error": {
+        "code": -32601,
+        "message": "No MCP server found for path: /abc/initialize"
+    }
+}
+📥 Request Body: {"jsonrpc":"2.0","id":6,"method":"tools/list","params":{"_meta":{"progressToken":6}}}
+📥 Request Path: /abc/initialize
+📥 Request Headers: ["Accept": "*/*", "Content-Type": "application/json", "User-Agent": "PostmanRuntime/7.37.3", "Cache-Control": "no-cache", "Postman-Token": "b8f6f9d6-9550-4ac6-ac8b-07db88b3209a", "Accept-Encoding": "gzip, deflate, br", "Connection": "keep-alive", "Content-Length": "85"]
+📤 Response Body: {
+    "jsonrpc": "2.0",
+    "id": null,
+    "error": {
+        "code": -32601,
+        "message": "No MCP server found for path: /abc/initialize"
+    }
+}
+📥 Request Body: {"jsonrpc":"2.0","id":0,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{"sampling":{},"elicitation":{},"roots":{"listChanged":true}},"clientInfo":{"name":"inspector-client","version":"0.17.1"}}}
+📥 Request Path: /abc
+📥 Request Headers: ["Connection": "keep-alive", "user-agent": "node-fetch", "accept-encoding": "gzip, deflate, br", "content-length": "225", "accept": "application/json, text/event-stream", "content-type": "application/json"]
+📤 Response Body: {"jsonrpc":"2.0","result":{"capabilities":{"tools":{},"prompts":{},"resources":{}},"protocolVersion":"2025-06-18","serverInfo":{"name":"Swift MCP Server","version":"1.0.0"}},"id":0}
+📥 Request Body: {"jsonrpc":"2.0","method":"notifications/initialized"}
+📥 Request Path: /abc
+📥 Request Headers: ["accept": "application/json, text/event-stream", "user-agent": "node-fetch", "accept-encoding": "gzip, deflate, br", "content-type": "application/json", "Connection": "keep-alive", "content-length": "54", "mcp-protocol-version": "2025-06-18"]
+📤 Response Body: {"error":{"code":-32601,"message":"Method not found"},"jsonrpc":"2.0"}
+📥 Request Body: {"jsonrpc":"2.0","id":1,"method":"resources/list","params":{"_meta":{"progressToken":1}}}
+📥 Request Path: /abc
+📥 Request Headers: ["accept": "application/json, text/event-stream", "user-agent": "node-fetch", "accept-encoding": "gzip, deflate, br", "content-type": "application/json", "Connection": "keep-alive", "content-length": "89", "mcp-protocol-version": "2025-06-18"]
+📤 Response Body: {"jsonrpc":"2.0","result":{"resources":[]},"id":1}
+📥 Request Body: {"jsonrpc":"2.0","id":2,"method":"tools/list","params":{"_meta":{"progressToken":2}}}
+📥 Request Path: /abc
+📥 Request Headers: ["accept": "application/json, text/event-stream", "user-agent": "node-fetch", "accept-encoding": "gzip, deflate, br", "content-type": "application/json", "Connection": "keep-alive", "content-length": "85", "mcp-protocol-version": "2025-06-18"]
+🔍 Encoding tool: write_file, schema: object(["required": MCP.JSONValue.array([MCP.JSONValue.string("path"), MCP.JSONValue.string("content")]), "properties": MCP.JSONValue.object(["path": MCP.JSONValue.object(["type": MCP.JSONValue.string("string")]), "content": MCP.JSONValue.object(["type": MCP.JSONValue.string("string")])]), "type": MCP.JSONValue.string("object")])
+🔍 Encoding tool: list_directory, schema: object(["properties": MCP.JSONValue.object(["path": MCP.JSONValue.object(["type": MCP.JSONValue.string("string")])]), "type": MCP.JSONValue.string("object"), "required": MCP.JSONValue.array([MCP.JSONValue.string("path")])])
+🔍 Encoding tool: read_file, schema: object(["required": MCP.JSONValue.array([MCP.JSONValue.string("path")]), "type": MCP.JSONValue.string("object"), "properties": MCP.JSONValue.object(["path": MCP.JSONValue.object(["type": MCP.JSONValue.string("string")])])])
+📤 Response Body: {"jsonrpc":"2.0","result":{"tools":[{"name":"write_file","description":"Write content to a file","inputSchema":{"required":["path","content"],"type":"object","properties":{"path":{"type":"string"},"content":{"type":"string"}}}},{"name":"list_directory","description":"List contents of a directory","inputSchema":{"properties":{"path":{"type":"string"}},"type":"object","required":["path"]}},{"name":"read_file","description":"Read contents of a file","inputSchema":{"required":["path"],"type":"object","properties":{"path":{"type":"string"}}}}]},"id":2}
+📥 Request Body: {"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"_meta":{"progressToken":3},"name":"list_directory","arguments":{"path":""}}}
+📥 Request Path: /abc
+📥 Request Headers: ["accept": "application/json, text/event-stream", "user-agent": "node-fetch", "accept-encoding": "gzip, deflate, br", "content-type": "application/json", "Connection": "keep-alive", "content-length": "133", "mcp-protocol-version": "2025-06-18"]
+📥 Request Body: {"jsonrpc":"2.0","id":6,"method":"tools/list","params":{"_meta":{"progressToken":6}}}
+📥 Request Path: /abc/initialize
+📥 Request Headers: ["Accept-Encoding": "gzip, deflate, br", "Content-Type": "application/json", "Accept": "*/*", "Cache-Control": "no-cache", "Postman-Token": "23d58a78-14c1-4e4f-ab2f-2e92c66cd1c1", "Connection": "keep-alive", "Content-Length": "85", "User-Agent": "PostmanRuntime/7.37.3"]
+📤 Response Body: {
+    "jsonrpc": "2.0",
+    "id": null,
+    "error": {
+        "code": -32601,
+        "message": "No MCP server found for path: /abc/initialize"
+    }
+}
+📥 Request Body: {"jsonrpc":"2.0","id":6,"method":"tools/list","params":{"_meta":{"progressToken":6}}}
+📥 Request Path: /abc/initialize
+📥 Request Headers: ["Accept-Encoding": "gzip, deflate, br", "Content-Type": "application/json", "Accept": "*/*", "Cache-Control": "no-cache", "Postman-Token": "45421580-9f0b-4c12-b4e0-6ed4d347d4a4", "Connection": "keep-alive", "Content-Length": "85", "User-Agent": "PostmanRuntime/7.37.3"]
+📤 Response Body: {
+    "jsonrpc": "2.0",
+    "id": null,
+    "error": {
+        "code": -32601,
+        "message": "No MCP server found for path: /abc/initialize"
+    }
+}
+📥 Request Body: {"jsonrpc":"2.0","id":6,"method":"tools/list","params":{"_meta":{"progressToken":6}}}
+📥 Request Path: /abc/initialize
+📥 Request Headers: ["Accept-Encoding": "gzip, deflate, br", "Content-Type": "application/json", "Accept": "*/*", "Cache-Control": "no-cache", "Postman-Token": "51444f70-c593-4f9f-9f03-9e0e950d8ff3", "Connection": "keep-alive", "Content-Length": "85", "User-Agent": "PostmanRuntime/7.37.3"]
+📤 Response Body: {
+    "jsonrpc": "2.0",
+    "id": null,
+    "error": {
+        "code": -32601,
+        "message": "No MCP server found for path: /abc/initialize"
+    }
+}
+📥 Request Body: {"jsonrpc":"2.0","id":6,"method":"tools/list","params":{"_meta":{"progressToken":6}}}
+📥 Request Path: /abc/initialize
+📥 Request Headers: ["Accept-Encoding": "gzip, deflate, br", "Content-Type": "application/json", "Accept": "*/*", "Cache-Control": "no-cache", "Postman-Token": "02d6c997-e6ce-41ff-ba33-e65d7c642686", "Connection": "keep-alive", "Content-Length": "85", "User-Agent": "PostmanRuntime/7.37.3"]
+📤 Response Body: {
+    "jsonrpc": "2.0",
+    "id": null,
+    "error": {
+        "code": -32601,
+        "message": "No MCP server found for path: /abc/initialize"
+    }
+}
+📥 Request Body: {"jsonrpc":"2.0","id":6,"method":"tools/list","params":{"_meta":{"progressToken":6}}}
+📥 Request Path: /abc/initialize
+📥 Request Headers: ["Accept-Encoding": "gzip, deflate, br", "Content-Type": "application/json", "Accept": "*/*", "Cache-Control": "no-cache", "Postman-Token": "35537c74-7c14-4218-9b6d-485dff8e3d8f", "Connection": "keep-alive", "Content-Length": "85", "User-Agent": "PostmanRuntime/7.37.3"]
+📤 Response Body: {
+    "jsonrpc": "2.0",
+    "id": null,
+    "error": {
+        "code": -32601,
+        "message": "No MCP server found for path: /abc/initialize"
+    }
+}
+📥 Request Body: {"jsonrpc":"2.0","id":6,"method":"tools/list","params":{"_meta":{"progressToken":6}}}
+📥 Request Path: /abc/initialize
+📥 Request Headers: ["Accept-Encoding": "gzip, deflate, br", "Content-Type": "application/json", "Accept": "*/*", "Cache-Control": "no-cache", "Postman-Token": "cd38c41c-c55f-427e-9f15-5894d7b32690", "Connection": "keep-alive", "Content-Length": "85", "User-Agent": "PostmanRuntime/7.37.3"]
+📤 Response Body: {
+    "jsonrpc": "2.0",
+    "id": null,
+    "error": {
+        "code": -32601,
+        "message": "No MCP server found for path: /abc/initialize"
+    }
+}
+📥 Request Body: {"jsonrpc":"2.0","id":6,"method":"tools/list","params":{"_meta":{"progressToken":6}}}
+📥 Request Path: /abc/initialize
+📥 Request Headers: ["Accept-Encoding": "gzip, deflate, br", "Content-Type": "application/json", "Accept": "*/*", "Cache-Control": "no-cache", "Postman-Token": "aa5436b4-4119-482c-969e-04b3a5481790", "Connection": "keep-alive", "Content-Length": "85", "User-Agent": "PostmanRuntime/7.37.3"]
+📤 Response Body: {
+    "jsonrpc": "2.0",
+    "id": null,
+    "error": {
+        "code": -32601,
+        "message": "No MCP server found for path: /abc/initialize"
+    }
+}
+📥 Request Body: {"jsonrpc":"2.0","id":6,"method":"tools/list","params":{"_meta":{"progressToken":6}}}
+📥 Request Path: /abc/initialize
+📥 Request Headers: ["Accept-Encoding": "gzip, deflate, br", "Content-Type": "application/json", "Accept": "*/*", "Cache-Control": "no-cache", "Postman-Token": "a5a6e543-a979-4ca0-8e9b-14d7bc19d678", "Connection": "keep-alive", "Content-Length": "85", "User-Agent": "PostmanRuntime/7.37.3"]
+📤 Response Body: {
+    "jsonrpc": "2.0",
+    "id": null,
+    "error": {
+        "code": -32601,
+        "message": "No MCP server found for path: /abc/initialize"
+    }
+}
+📥 Request Body: {"jsonrpc":"2.0","id":6,"method":"tools/list","params":{"_meta":{"progressToken":6}}}
+📥 Request Path: /abc/initialize
+📥 Request Headers: ["Accept-Encoding": "gzip, deflate, br", "Content-Type": "application/json", "Accept": "*/*", "Cache-Control": "no-cache", "Postman-Token": "29f9ee1e-a01a-4d79-b42e-17769ab2aa14", "Connection": "keep-alive", "Content-Length": "85", "User-Agent": "PostmanRuntime/7.37.3"]
+📤 Response Body: {
+    "jsonrpc": "2.0",
+    "id": null,
+    "error": {
+        "code": -32601,
+        "message": "No MCP server found for path: /abc/initialize"
+    }
+}

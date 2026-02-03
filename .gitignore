@@ -4,3 +4,7 @@
 .swiftpm/
 .dockerignore
 q.md
+CLAUDE.md
+temp
+prompts/
+opencode.json

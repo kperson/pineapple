@@ -1,14 +1,17 @@
-import XCTest
+import Testing
 @testable import LambdaApp
 
-final class LambdaAppTests: XCTestCase {
+@Suite("LambdaApp Tests")
+struct LambdaAppTests {
     
-    func testLambdaAppCreation() {
+    @Test("LambdaApp can be created")
+    func creation() {
         let app = LambdaApp()
-        XCTAssertNotNil(app)
+        #expect(app.handlerCount == 0)
     }
     
-    func testHandlerRegistrationAndRetrieval() {
+    @Test("Handlers can be registered and retrieved")
+    func handlerRegistrationAndRetrieval() {
         let app = LambdaApp()
         
         // Register handlers
@@ -19,67 +22,70 @@ final class LambdaAppTests: XCTestCase {
         app.addEventBridge(key: "event-handler") { _, _ in }
         
         // Verify handlers are stored
-        XCTAssertNotNil(app.handler(for: "sqs-handler"))
-        XCTAssertNotNil(app.handler(for: "sns-handler"))
-        XCTAssertNotNil(app.handler(for: "s3-handler"))
-        XCTAssertNotNil(app.handler(for: "dynamo-handler"))
-        XCTAssertNotNil(app.handler(for: "event-handler"))
+        #expect(app.handler(for: "sqs-handler") != nil)
+        #expect(app.handler(for: "sns-handler") != nil)
+        #expect(app.handler(for: "s3-handler") != nil)
+        #expect(app.handler(for: "dynamo-handler") != nil)
+        #expect(app.handler(for: "event-handler") != nil)
         
         // Verify correct handler types
         guard case .sqs(_) = app.handler(for: "sqs-handler")! else {
-            XCTFail("Expected SQS handler")
+            Issue.record("Expected SQS handler")
             return
         }
         guard case .sns(_) = app.handler(for: "sns-handler")! else {
-            XCTFail("Expected SNS handler")
+            Issue.record("Expected SNS handler")
             return
         }
         guard case .s3(_) = app.handler(for: "s3-handler")! else {
-            XCTFail("Expected S3 handler")
+            Issue.record("Expected S3 handler")
             return
         }
         guard case .dynamodb(_) = app.handler(for: "dynamo-handler")! else {
-            XCTFail("Expected DynamoDB handler")
+            Issue.record("Expected DynamoDB handler")
             return
         }
         guard case .basicVoid(_) = app.handler(for: "event-handler")! else {
-            XCTFail("Expected BasicVoid handler")
+            Issue.record("Expected BasicVoid handler")
             return
         }
     }
     
-    func testHandlerOverwriting() {
+    @Test("Handlers can be overwritten")
+    func handlerOverwriting() {
         let app = LambdaApp()
         
         // Register initial handler
         app.addSQS(key: "test-key") { _, _ in }
-        XCTAssertNotNil(app.handler(for: "test-key"))
+        #expect(app.handler(for: "test-key") != nil)
         
         // Overwrite with different handler type
         app.addSNS(key: "test-key") { _, _ in }
         
         // Should have SNS handler now
         guard case .sns(_) = app.handler(for: "test-key")! else {
-            XCTFail("Expected SNS handler after overwrite")
+            Issue.record("Expected SNS handler after overwrite")
             return
         }
     }
     
-    func testNonExistentHandler() {
+    @Test("Non-existent handler returns nil")
+    func nonExistentHandler() {
         let app = LambdaApp()
-        XCTAssertNil(app.handler(for: "non-existent"))
+        #expect(app.handler(for: "non-existent") == nil)
     }
     
-    func testMethodChaining() {
+    @Test("Method chaining works")
+    func methodChaining() {
         let app = LambdaApp()
         let result = app
             .addSQS(key: "sqs") { _, _ in }
             .addSNS(key: "sns") { _, _ in }
             .addS3(key: "s3") { _, _ in }
         
-        XCTAssertTrue(result === app)
-        XCTAssertNotNil(app.handler(for: "sqs"))
-        XCTAssertNotNil(app.handler(for: "sns"))
-        XCTAssertNotNil(app.handler(for: "s3"))
+        #expect(result === app)
+        #expect(app.handler(for: "sqs") != nil)
+        #expect(app.handler(for: "sns") != nil)
+        #expect(app.handler(for: "s3") != nil)
     }
 }

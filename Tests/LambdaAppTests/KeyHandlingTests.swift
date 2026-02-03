@@ -1,15 +1,18 @@
-import XCTest
+import Testing
 @testable import LambdaApp
 
-final class KeyHandlingTests: XCTestCase {
+@Suite("Key Handling Tests")
+struct KeyHandlingTests {
     
-    func testEmptyKey() {
+    @Test("Empty key can be used")
+    func emptyKey() {
         let app = LambdaApp()
         app.addSQS(key: "") { _, _ in }
-        XCTAssertNotNil(app.handler(for: ""))
+        #expect(app.handler(for: "") != nil)
     }
     
-    func testCaseSensitivity() {
+    @Test("Keys are case-sensitive")
+    func caseSensitivity() {
         let app = LambdaApp()
         
         app.addSQS(key: "TestKey") { _, _ in }
@@ -17,18 +20,19 @@ final class KeyHandlingTests: XCTestCase {
         
         // Should be different keys
         guard case .sqs(_) = app.handler(for: "TestKey")! else {
-            XCTFail("Expected SQS handler for 'TestKey'")
+            Issue.record("Expected SQS handler for 'TestKey'")
             return
         }
         guard case .sns(_) = app.handler(for: "testkey")! else {
-            XCTFail("Expected SNS handler for 'testkey'")
+            Issue.record("Expected SNS handler for 'testkey'")
             return
         }
         
-        XCTAssertNil(app.handler(for: "TESTKEY"))
+        #expect(app.handler(for: "TESTKEY") == nil)
     }
     
-    func testSpecialCharacters() {
+    @Test("Special characters in keys are supported")
+    func specialCharacters() {
         let app = LambdaApp()
         
         let specialKeys = [
@@ -46,20 +50,21 @@ final class KeyHandlingTests: XCTestCase {
             if index % 2 == 0 {
                 app.addSQS(key: key) { _, _ in }
                 guard case .sqs(_) = app.handler(for: key)! else {
-                    XCTFail("Failed to store/retrieve handler for key: \(key)")
+                    Issue.record("Failed to store/retrieve handler for key: \(key)")
                     return
                 }
             } else {
                 app.addSNS(key: key) { _, _ in }
                 guard case .sns(_) = app.handler(for: key)! else {
-                    XCTFail("Failed to store/retrieve handler for key: \(key)")
+                    Issue.record("Failed to store/retrieve handler for key: \(key)")
                     return
                 }
             }
         }
     }
     
-    func testUnicodeKeys() {
+    @Test("Unicode keys are supported")
+    func unicodeKeys() {
         let app = LambdaApp()
         
         let unicodeKeys = ["🚀", "测试", "café", "naïve"]
@@ -67,21 +72,22 @@ final class KeyHandlingTests: XCTestCase {
         for key in unicodeKeys {
             app.addS3(key: key) { _, _ in }
             guard case .s3(_) = app.handler(for: key)! else {
-                XCTFail("Failed to handle unicode key: \(key)")
+                Issue.record("Failed to handle unicode key: \(key)")
                 return
             }
         }
     }
     
-    func testLongKeys() {
+    @Test("Long keys (1000 characters) are supported")
+    func longKeys() {
         let app = LambdaApp()
         
         let longKey = String(repeating: "a", count: 1000)
         app.addDynamoDB(key: longKey) { _, _ in }
         
-        XCTAssertNotNil(app.handler(for: longKey))
+        #expect(app.handler(for: longKey) != nil)
         guard case .dynamodb(_) = app.handler(for: longKey)! else {
-            XCTFail("Expected DynamoDB handler for long key")
+            Issue.record("Expected DynamoDB handler for long key")
             return
         }
     }

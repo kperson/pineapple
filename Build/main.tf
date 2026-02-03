@@ -36,9 +36,9 @@ module "sqs_test" {
   handler          = "test.sqs"
 
   env = {
-    TEST_RUN_KEY = "integration-test"
+    TEST_RUN_KEY = var.test_run_key
     VERIFY_TABLE = module.db_verify.id
-    LOG_LEVEL = "debug"
+    LOG_LEVEL    = var.log_level
   }
 }
 
@@ -55,9 +55,9 @@ module "sns_test" {
   handler       = "test.sns"
 
   env = {
-    TEST_RUN_KEY = "integration-test"
+    TEST_RUN_KEY = var.test_run_key
     VERIFY_TABLE = module.db_verify.id
-    LOG_LEVEL = "debug"
+    LOG_LEVEL    = var.log_level
   }
 }
 
@@ -76,9 +76,9 @@ module "s3_test_events" {
   handler          = "test.s3-events"
 
   env = {
-    TEST_RUN_KEY = "integration-test"
+    TEST_RUN_KEY = var.test_run_key
     VERIFY_TABLE = module.db_verify.id
-    LOG_LEVEL = "debug"
+    LOG_LEVEL    = var.log_level
   }
 }
 
@@ -95,9 +95,9 @@ module "dynamo_test" {
   handler       = "test.dynamo"
 
   env = {
-    TEST_RUN_KEY = "integration-test"
+    TEST_RUN_KEY = var.test_run_key
     VERIFY_TABLE = module.db_verify.id
-    LOG_LEVEL = "debug"
+    LOG_LEVEL    = var.log_level
   }
 }
 
@@ -115,27 +115,27 @@ module "http_test" {
   handler          = "test.http"
 
   env = {
-    TEST_RUN_KEY = "integration-test"
+    TEST_RUN_KEY = var.test_run_key
     VERIFY_TABLE = module.db_verify.id
-    LOG_LEVEL = "debug"
+    LOG_LEVEL    = var.log_level
   }
 }
 
 module "cron_test" {
-   source           = "../terraform-support/cron-lambda"
-   depends_on       = [module.ecr_push]
-   schedule_expression = "cron(* * * * ? *)" // every minute
-   function_name    = "pineapple-cron"
-   role             = module.lambda_role_arn.out
-   ecr_repo_name    = module.ecr_push.ecr_repo_name
-   ecr_repo_tag     = module.ecr_push.ecr_repo_tag
-   memory_size      = 256
-   timeout          = 30
-   handler          = "test.cron"
+  source              = "../terraform-support/cron-lambda"
+  depends_on          = [module.ecr_push]
+  schedule_expression = "cron(* * * * ? *)" // every minute
+  function_name       = "pineapple-cron"
+  role                = module.lambda_role_arn.out
+  ecr_repo_name       = module.ecr_push.ecr_repo_name
+  ecr_repo_tag        = module.ecr_push.ecr_repo_tag
+  memory_size         = 256
+  timeout             = 30
+  handler             = "test.cron"
 
-   env = {
-     TEST_RUN_KEY = "integration-test"
-     VERIFY_TABLE = module.db_verify.id
-     LOG_LEVEL = "debug"
-   }
- }
+  env = {
+    TEST_RUN_KEY = "integration-test"
+    VERIFY_TABLE = module.db_verify.id
+    LOG_LEVEL    = "debug"
+  }
+}
