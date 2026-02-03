@@ -15,6 +15,7 @@ let package = Package(
         .library(name: "MCPLambda", targets: ["MCPLambda"]),
         .library(name: "MCPHummingbird", targets: ["MCPHummingbird"]),
         .library(name: "MCPStdio", targets: ["MCPStdio"]),
+        .library(name: "HummingbirdLambda", targets: ["HummingbirdLambda"]),
         .library(name: "SimpleMathServer", targets: ["SimpleMathServer"]),
         .executable(name: "MCPExample", targets: ["MCPExample"])
     ],
@@ -90,6 +91,15 @@ let package = Package(
                 "MCP"
             ],
             path: "./Source/MCPStdio",
+            exclude: ["README.md"]
+        ),
+        .target(
+            name: "HummingbirdLambda",
+            dependencies: [
+                "LambdaApp",
+                .product(name: "Hummingbird", package: "hummingbird")
+            ],
+            path: "./Source/HummingbirdLambda",
             exclude: ["README.md"]
         ),
         .target(
@@ -192,6 +202,15 @@ let package = Package(
             dependencies: [
                 "LambdaApp"
             ]
+        ),
+        .testTarget(
+            name: "HummingbirdLambdaTests",
+            dependencies: [
+                "HummingbirdLambda",
+                "LambdaApp",
+                .product(name: "HummingbirdTesting", package: "hummingbird")
+            ],
+            path: "./Tests/HummingbirdLambdaTests"
         )
     ],
     swiftLanguageModes: [.v6]

@@ -128,6 +128,42 @@ app.run(handlerKey: "mcp")
 - **[MCPHummingbird](Source/MCPHummingbird/README.md)** - HTTP server for local development
 - **[MCPStdio](Source/MCPStdio/README.md)** - Standard I/O for Claude Desktop
 
+### HummingbirdLambda
+
+Run standard [Hummingbird](https://hummingbird.codes) routing code on AWS Lambda:
+
+```swift
+import HummingbirdLambda
+import LambdaApp
+
+let router = Router(context: LambdaRequestContext.self)
+
+router.get("users/:id") { req, ctx in
+    let id = ctx.parameters.get("id") ?? "unknown"
+    // Access Lambda context
+    ctx.lambdaContext.logger.info("Fetching user \(id)")
+    return "User: \(id)"
+}
+
+router.post("users") { req, ctx in
+    // Parse body, create user...
+    return Response(status: .created)
+}
+
+let app = LambdaApp()
+    .addHummingbird(key: "api", router: router)
+
+app.run(handlerKey: "api")
+```
+
+**Features:**
+- Standard Hummingbird routing (`router.get()`, `router.post()`, etc.)
+- Path parameters via `ctx.parameters`
+- Lambda context access (request ID, deadline, logger)
+- API Gateway request access (headers, query params, stage variables)
+
+📖 **[Full HummingbirdLambda Documentation](Source/HummingbirdLambda/README.md)**
+
 📖 **[Full MCP Documentation](Source/MCP/README.md)**
 
 ### SystemTests & RemoteVerify
@@ -336,6 +372,7 @@ pineapple/
 │   ├── MCPLambda/              # MCP → Lambda adapter
 │   ├── MCPHummingbird/         # MCP → HTTP adapter
 │   ├── MCPStdio/               # MCP → Stdio adapter
+│   ├── HummingbirdLambda/      # Hummingbird → Lambda adapter
 │   ├── JSONSchemaDSL/          # JSON Schema generation
 │   ├── JSONValueCoding/        # JSON value encoding/decoding
 │   ├── LambdaHandler/          # Deployable Lambda executable
@@ -347,6 +384,7 @@ pineapple/
 │   ├── MCPLambdaTests/         # Lambda adapter tests
 │   ├── MCPHummingbirdTests/    # HTTP adapter tests
 │   ├── MCPStdioTests/          # Stdio adapter tests
+│   ├── HummingbirdLambdaTests/ # Hummingbird Lambda adapter tests
 │   └── SystemTests/            # Integration tests (requires AWS)
 ├── Build/                      # Terraform configuration
 ├── Dockerfile                  # Multi-stage Lambda build
@@ -364,6 +402,7 @@ pineapple/
 - `MCPLambdaTests` - Lambda adapter
 - `MCPHummingbirdTests` - HTTP adapter
 - `MCPStdioTests` - Stdio adapter
+- `HummingbirdLambdaTests` - Hummingbird Lambda adapter
 - `JSONValueCodingTests` - JSON encoding/decoding
 
 **Integration Tests** (slow, requires AWS):
@@ -381,6 +420,9 @@ swift test --filter LambdaAppTests
 # MCP tests only
 swift test --filter MCPTests
 
+# HummingbirdLambda tests only
+swift test --filter HummingbirdLambdaTests
+
 # Integration tests (requires AWS)
 swift test --filter SystemTests
 
@@ -391,12 +433,12 @@ swift test --filter "LambdaAppTests.EventProcessingTests/sqsEventProcessing"
 ### Test Results
 
 ```
-✔ Test run with 579 tests passed
+✔ Test run with 594 tests passed
 
 Breakdown:
 - LambdaApp Tests: ~45 tests
 - MCP Tests: ~450 tests
-- Adapter Tests: ~75 tests
+- Adapter Tests: ~90 tests (MCP + Hummingbird Lambda)
 - System Tests: 10 tests (requires AWS)
 ```
 

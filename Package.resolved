@@ -1,5 +1,5 @@
 {
-  "originHash" : "5fd183aa9dd44bb37adffdac4d5692e9477194d379075461dd55e02cb2da3f27",
+  "originHash" : "7fb9ae7fc9382ef26be98d0e63debfdbfd5a560833f4ad140915205f98fde81c",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -69,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-async-algorithms.git",
       "state" : {
-        "revision" : "042e1c4d9d19748c9c228f8d4ebc97bb1e339b0b",
-        "version" : "1.0.4"
+        "revision" : "6c050d5ef8e1aa6342528460db614e9770d7f804",
+        "version" : "1.1.1"
       }
     },
     {
@@ -89,6 +89,15 @@
       "state" : {
         "revision" : "5aa3a6305864a2060b69f30cf3e24f4a2b5b16ba",
         "version" : "1.2.1"
+      }
+    },
+    {
+      "identity" : "swift-certificates",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-certificates.git",
+      "state" : {
+        "revision" : "f4cd9e78a1ec209b27e426a5f5c693675f95e75a",
+        "version" : "1.15.0"
       }
     },
     {
@@ -168,8 +177,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-nio-extras.git",
       "state" : {
-        "revision" : "f1f6f772198bee35d99dd145f1513d8581a54f2c",
-        "version" : "1.26.0"
+        "revision" : "a55c3dd3a81d035af8a20ce5718889c0dcab073d",
+        "version" : "1.29.0"
       }
     },
     {
@@ -222,8 +231,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swift-server/swift-service-lifecycle.git",
       "state" : {
-        "revision" : "0fcc4c9c2d58dd98504c06f7308c86de775396ff",
-        "version" : "2.9.0"
+        "revision" : "1de37290c0ab3c5a96028e0f02911b672fd42348",
+        "version" : "2.9.1"
       }
     },
     {
