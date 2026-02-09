@@ -94,6 +94,25 @@ public protocol S3Handler: LambdaVoidEventHandler where Event == S3Event {}
 /// ```
 public protocol APIGatewayHandler: LambdaEventHandler where Event == APIGatewayRequest, Output == APIGatewayResponse {}
 
+/// Handler for API Gateway HTTP API (V2) events
+///
+/// Processes HTTP requests from API Gateway HTTP API and returns HTTP responses. Use with
+/// `.addAPIGatewayV2()` for HTTP API endpoints.
+///
+/// **Event Source:** API Gateway HTTP API (v2 payload format)
+///
+/// **Example:**
+/// ```swift
+/// .addAPIGatewayV2(key: "api") { context, request in
+///     context.logger.info("Path: \(request.rawPath)")
+///     return APIGatewayV2Response(
+///         statusCode: .ok,
+///         body: "{\"message\": \"Hello\"}"
+///     )
+/// }
+/// ```
+public protocol APIGatewayV2Handler: LambdaEventHandler where Event == APIGatewayV2Request, Output == APIGatewayV2Response {}
+
 /// Handler for EventBridge/CloudWatch Events with return value
 ///
 /// Processes custom events from EventBridge or CloudWatch Events and returns a string response.
@@ -170,6 +189,7 @@ public final class LambdaApp: RuntimeEventHandler, @unchecked Sendable {
         case dynamodb(any DynamoDBHandler)
         case s3(any S3Handler)
         case apiGateway(any APIGatewayHandler)
+        case apiGatewayV2(any APIGatewayV2Handler)
         case basic(any BasicHandler)
         case basicVoid(any BasicVoidHandler)
     }
@@ -250,6 +270,18 @@ public final class LambdaApp: RuntimeEventHandler, @unchecked Sendable {
             }
         }
         return add(key: key, handler: .apiGateway(ClosureHandler(closure: handler)))
+    }
+
+    /// Register API Gateway V2 (HTTP API) handler with closure
+    @discardableResult
+    public func addAPIGatewayV2(key: String, handler: @escaping (LambdaContext, APIGatewayV2Request) async throws -> APIGatewayV2Response) -> LambdaApp {
+        struct ClosureHandler: APIGatewayV2Handler {
+            let closure: (LambdaContext, APIGatewayV2Request) async throws -> APIGatewayV2Response
+            func handleEvent(context: LambdaContext, event: APIGatewayV2Request) async throws -> APIGatewayV2Response {
+                return try await closure(context, event)
+            }
+        }
+        return add(key: key, handler: .apiGatewayV2(ClosureHandler(closure: handler)))
     }
     
     /// Register EventBridge handler with closure (uses String for flexibility)
@@ -372,6 +404,14 @@ public final class LambdaApp: RuntimeEventHandler, @unchecked Sendable {
             let apiGatewayEvent = try JSONDecoder().decode(APIGatewayRequest.self, from: event.payload.body)
             let response = try await apiGatewayHandler.handleEvent(context: context, event: apiGatewayEvent)
             logger.debug("API Gateway V1 handler completed")
+            let responseData = try JSONEncoder().encode(response)
+            event.sendResponse(data: responseData)
+
+        case .apiGatewayV2(let apiGatewayV2Handler):
+            logger.debug("Starting API Gateway V2 handler")
+            let apiGatewayV2Event = try JSONDecoder().decode(APIGatewayV2Request.self, from: event.payload.body)
+            let response = try await apiGatewayV2Handler.handleEvent(context: context, event: apiGatewayV2Event)
+            logger.debug("API Gateway V2 handler completed")
             let responseData = try JSONEncoder().encode(response)
             event.sendResponse(data: responseData)
         }

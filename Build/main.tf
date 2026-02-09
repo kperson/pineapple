@@ -121,6 +121,25 @@ module "http_test" {
   }
 }
 
+module "http_v2_test" {
+  source        = "../terraform-support/http-api-lambda"
+  depends_on    = [module.ecr_push]
+  api_name      = "pineapple-test-v2"
+  function_name = "pineapple-httpv2"
+  role          = module.lambda_role_arn.out
+  ecr_repo_name = module.ecr_push.ecr_repo_name
+  ecr_repo_tag  = module.ecr_push.ecr_repo_tag
+  memory_size   = 512
+  timeout       = 30
+  handler       = "test.httpv2"
+
+  env = {
+    TEST_RUN_KEY = var.test_run_key
+    VERIFY_TABLE = module.db_verify.id
+    LOG_LEVEL    = var.log_level
+  }
+}
+
 module "cron_test" {
   source              = "../terraform-support/cron-lambda"
   depends_on          = [module.ecr_push]

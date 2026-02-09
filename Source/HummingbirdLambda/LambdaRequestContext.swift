@@ -125,3 +125,49 @@ public struct LambdaRequestContext: RequestContext {
         self.apiGatewayRequest = source.apiGatewayRequest
     }
 }
+
+// MARK: - Lambda V2 Request Context Source
+
+/// Source for creating LambdaV2RequestContext (API Gateway HTTP API)
+public struct LambdaV2RequestContextSource: RequestContextSource {
+
+    /// Logger for the request (from Lambda context)
+    public let logger: Logger
+
+    /// AWS Lambda execution context
+    public let lambdaContext: LambdaContext
+
+    /// Original API Gateway V2 request
+    public let apiGatewayV2Request: APIGatewayV2Request
+
+    public init(lambdaContext: LambdaContext, apiGatewayV2Request: APIGatewayV2Request) {
+        self.logger = lambdaContext.logger
+        self.lambdaContext = lambdaContext
+        self.apiGatewayV2Request = apiGatewayV2Request
+    }
+}
+
+// MARK: - Lambda V2 Request Context
+
+/// Custom Hummingbird RequestContext for API Gateway HTTP API (V2)
+///
+/// Mirrors `LambdaRequestContext` but holds an `APIGatewayV2Request` instead of V1.
+public struct LambdaV2RequestContext: RequestContext {
+
+    public typealias Source = LambdaV2RequestContextSource
+
+    /// Core request context storage (allocator, logger)
+    public var coreContext: CoreRequestContextStorage
+
+    /// AWS Lambda execution context
+    public let lambdaContext: LambdaContext
+
+    /// Original API Gateway V2 request
+    public let apiGatewayV2Request: APIGatewayV2Request
+
+    public init(source: LambdaV2RequestContextSource) {
+        self.coreContext = .init(source: source)
+        self.lambdaContext = source.lambdaContext
+        self.apiGatewayV2Request = source.apiGatewayV2Request
+    }
+}

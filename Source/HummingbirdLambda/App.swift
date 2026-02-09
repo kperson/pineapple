@@ -205,3 +205,37 @@ public extension LambdaApp {
         addAPIGateway(key: key, handler: hbApp.createHandler())
     }
 }
+
+// MARK: - V2 App
+
+/// Fluent builder for Hummingbird applications deployed to AWS Lambda via API Gateway HTTP API (V2)
+///
+/// Mirrors `App` but uses V2 types for lower latency and lower cost HTTP API.
+public class V2App {
+
+    internal let router: Router<LambdaV2RequestContext>
+
+    /// Create a new Hummingbird Lambda V2 app with closure-based configuration
+    public init(
+        configure: ((Router<LambdaV2RequestContext>) -> Void)? = nil
+    ) {
+        self.router = Router(context: LambdaV2RequestContext.self)
+        configure?(router)
+    }
+
+    /// Creates the Lambda API Gateway V2 handler function
+    internal func createHandler() -> (LambdaContext, APIGatewayV2Request) async throws -> APIGatewayV2Response {
+        let adapter = HummingbirdLambdaAdapter()
+        return adapter.bridgeV2(router)
+    }
+}
+
+// MARK: - LambdaApp Extension for V2App
+
+public extension LambdaApp {
+
+    @discardableResult
+    func addHummingbirdV2(key: String, hbApp: V2App) -> LambdaApp {
+        addAPIGatewayV2(key: key, handler: hbApp.createHandler())
+    }
+}

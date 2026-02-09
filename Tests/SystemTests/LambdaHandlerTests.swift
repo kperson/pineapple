@@ -354,6 +354,36 @@ struct LambdaHandlerTests {
         }
     }
 
+    // MARK: - HTTP API Gateway V2 Tests
+
+    /// Tests API Gateway V2 (HTTP API) request processing integration.
+    ///
+    /// This test sends an HTTP request to the HTTP API endpoint and verifies that
+    /// the Lambda function processes it correctly by checking for verification data
+    /// in DynamoDB that matches the request path.
+    @Test("API Gateway V2 HTTP request processing")
+    func httpV2Integration() async throws {
+        try await withResources { resources in
+            let endpoint = try #require(
+                ProcessInfo.processInfo.environment["TEST_API_V2_ENDPOINT"],
+                "TEST_API_V2_ENDPOINT environment variable required"
+            )
+
+            let result = try await resources.verifier.checkWithValue(test: "httpv2") { key in
+                let url = URL(string: "\(endpoint)/\(key)")!
+                let (_, response) = try await URLSession.shared.data(from: url)
+
+                guard let httpResponse = response as? HTTPURLResponse,
+                      httpResponse.statusCode == 200 else {
+                    Issue.record("HTTP V2 request failed")
+                    return
+                }
+            }
+
+            #expect(result)
+        }
+    }
+
     // MARK: - RemoteVerify Pattern Tests
 
     /// Tests the RemoteVerify save and check pattern.

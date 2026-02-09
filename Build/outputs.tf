@@ -30,6 +30,11 @@ output "api_gateway_endpoint" {
   value       = module.http_test.endpoint
 }
 
+output "api_gateway_v2_endpoint" {
+  description = "API Gateway V2 (HTTP API) endpoint URL (for TEST_API_V2_ENDPOINT)"
+  value       = module.http_v2_test.endpoint
+}
+
 output "test_run_key" {
   description = "Test run key for coordination (for TEST_RUN_KEY)"
   value       = var.test_run_key
@@ -52,7 +57,8 @@ output "systemtest_env_vars" {
     export TEST_S3_BUCKET=${aws_s3_bucket.test_bucket.id}
     export TEST_TABLE=${module.dynamo_stream.id}
     export TEST_API_ENDPOINT=${module.http_test.endpoint}
-    
+    export TEST_API_V2_ENDPOINT=${module.http_v2_test.endpoint}
+
     # Note: AWS_PROFILE is already set in your environment or use the same credentials as Terraform
   EOT
 }

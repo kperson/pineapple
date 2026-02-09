@@ -74,6 +74,18 @@ let app = LambdaApp()
         body: "{\"message\": \"Hello from Pineapple Lambda!\"}"
     )
 }
+.addAPIGatewayV2(key: "test.httpv2") { context, request in
+    context.logger.info("Processing API Gateway V2 request: \(request.context.http.method) \(request.rawPath)")
+
+    // Remove leading "/" from V2 rawPath (e.g., "/bob" becomes "bob")
+    try await remoteVerify.save(test: "httpv2", value: String(request.rawPath.dropFirst()))
+
+    return APIGatewayV2Response(
+        statusCode: 200,
+        headers: ["Content-Type": "application/json"],
+        body: "{\"message\": \"Hello from Pineapple Lambda V2!\"}"
+    )
+}
 .addSNS(key: "test.sns") { context, event in
     context.logger.info("Processing SNS event with \(event.records.count) records")
     

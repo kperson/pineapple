@@ -180,3 +180,36 @@ public extension LambdaApp {
         addAPIGateway(key: key, handler: app.createHandler())
     }
 }
+
+// MARK: - V2 App
+
+/// Fluent builder for MCP servers deployed to AWS Lambda via API Gateway HTTP API (V2)
+///
+/// Mirrors `App` but uses V2 types for lower latency and lower cost HTTP API.
+public class V2App {
+
+    private let adapter: LambdaV2Adapter
+    private let router: LambdaV2Router
+
+    /// Create a new MCP Lambda V2 app with closure-based configuration
+    public init(
+        configure: ((LambdaV2Adapter, LambdaV2Router) -> Void)? = nil
+    ) {
+        self.adapter = LambdaV2Adapter()
+        self.router = LambdaV2Router()
+        configure?(adapter, router)
+    }
+
+    /// Creates the Lambda API Gateway V2 handler function
+    func createHandler() -> (LambdaContext, APIGatewayV2Request) async throws -> APIGatewayV2Response {
+        adapter.bridge(router)
+    }
+}
+
+/// LambdaApp extension for integrating MCP V2 apps
+public extension LambdaApp {
+
+    @discardableResult func addMCPV2(key: String, mcpApp app: V2App) -> LambdaApp {
+        addAPIGatewayV2(key: key, handler: app.createHandler())
+    }
+}

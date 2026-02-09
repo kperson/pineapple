@@ -167,7 +167,7 @@ public final class HummingbirdLambdaAdapter: @unchecked Sendable {
         // Create request body
         let requestBody: RequestBody
         if let data = bodyData {
-            let buffer = ByteBuffer(data: data)
+            let buffer = ByteBuffer(bytes: data)
             requestBody = .init(buffer: buffer)
         } else {
             requestBody = .init(buffer: ByteBuffer())
@@ -353,6 +353,176 @@ public extension APIGatewayRouter {
     func mountHummingbird(
         router: Router<LambdaRequestContext>
     ) -> APIGatewayRouter {
+        return mountHummingbird("/", router: router)
+    }
+}
+
+// MARK: - API Gateway V2 (HTTP API) Support
+
+public extension HummingbirdLambdaAdapter {
+
+    /// Bridge a Hummingbird Router to a Lambda API Gateway V2 handler
+    func bridgeV2(
+        _ router: Router<LambdaV2RequestContext>
+    ) -> (LambdaContext, APIGatewayV2Request) async throws -> APIGatewayV2Response {
+        return bridgeV2(router, pathOverride: nil)
+    }
+
+    /// Bridge a Hummingbird Router to a Lambda API Gateway V2 handler with optional path override
+    func bridgeV2(
+        _ router: Router<LambdaV2RequestContext>,
+        pathOverride: String?
+    ) -> (LambdaContext, APIGatewayV2Request) async throws -> APIGatewayV2Response {
+        let responder = router.buildResponder()
+
+        return { [self] lambdaContext, apiGwRequest in
+            let (request, requestContext) = self.convertV2Request(
+                apiGwRequest,
+                lambdaContext: lambdaContext,
+                pathOverride: pathOverride
+            )
+
+            let response = try await responder.respond(to: request, context: requestContext)
+
+            return try await self.convertV2Response(response)
+        }
+    }
+
+    // MARK: - V2 Request Conversion
+
+    /// Convert API Gateway V2 request to Hummingbird Request and Context
+    private func convertV2Request(
+        _ apiGwRequest: APIGatewayV2Request,
+        lambdaContext: LambdaContext,
+        pathOverride: String?
+    ) -> (Request, LambdaV2RequestContext) {
+        let path = pathOverride ?? apiGwRequest.rawPath
+        let uri: String
+        let queryParams = apiGwRequest.queryStringParameters
+        if !queryParams.isEmpty {
+            var components = URLComponents()
+            components.path = path
+            components.queryItems = queryParams.map { URLQueryItem(name: $0.key, value: $0.value) }
+            uri = components.string ?? path
+        } else {
+            uri = path
+        }
+
+        let method = apiGwRequest.context.http.method
+
+        var headerFields = HTTPFields()
+        let headers = apiGwRequest.headers
+        for (name, value) in headers {
+            if let fieldName = HTTPField.Name(name) {
+                headerFields[fieldName] = value
+            }
+        }
+
+        let bodyData: Data?
+        if let body = apiGwRequest.body {
+            if apiGwRequest.isBase64Encoded {
+                bodyData = Data(base64Encoded: body)
+            } else {
+                bodyData = body.data(using: .utf8)
+            }
+        } else {
+            bodyData = nil
+        }
+
+        let requestBody: RequestBody
+        if let data = bodyData {
+            let buffer = ByteBuffer(bytes: data)
+            requestBody = .init(buffer: buffer)
+        } else {
+            requestBody = .init(buffer: ByteBuffer())
+        }
+
+        let httpMethod = HTTPRequest.Method(rawValue: method.rawValue) ?? .get
+        let head = HTTPRequest(method: httpMethod, scheme: "https", authority: nil, path: uri, headerFields: headerFields)
+        let request = Request(head: head, body: requestBody)
+
+        let source = LambdaV2RequestContextSource(
+            lambdaContext: lambdaContext,
+            apiGatewayV2Request: apiGwRequest
+        )
+
+        let context = LambdaV2RequestContext(source: source)
+
+        return (request, context)
+    }
+
+    // MARK: - V2 Response Conversion
+
+    /// Convert Hummingbird Response to API Gateway V2 Response
+    private func convertV2Response(_ response: Response) async throws -> APIGatewayV2Response {
+        let statusCode = HTTPResponse.Status(code: Int(response.status.code), reasonPhrase: response.status.reasonPhrase)
+
+        var headers: [String: String] = [:]
+        for field in response.headers {
+            headers[field.name.rawName] = field.value
+        }
+
+        let writer = CollectingResponseBodyWriter()
+        try await response.body.write(writer)
+
+        var bodyData = Data()
+        for buffer in writer.buffers {
+            bodyData.append(contentsOf: buffer.readableBytesView)
+        }
+
+        let body: String?
+        if bodyData.isEmpty {
+            body = nil
+        } else {
+            body = bodyData.base64EncodedString()
+        }
+
+        return APIGatewayV2Response(
+            statusCode: statusCode,
+            headers: headers.isEmpty ? nil : headers,
+            body: body,
+            isBase64Encoded: !bodyData.isEmpty
+        )
+    }
+}
+
+// MARK: - LambdaApp V2 Extension
+
+public extension LambdaApp {
+
+    /// Add Hummingbird Router as a Lambda API Gateway V2 handler
+    @discardableResult
+    func addHummingbirdV2(
+        key: String,
+        router: Router<LambdaV2RequestContext>
+    ) -> LambdaApp {
+        let adapter = HummingbirdLambdaAdapter()
+        return addAPIGatewayV2(key: key, handler: adapter.bridgeV2(router))
+    }
+}
+
+// MARK: - APIGatewayV2Router Extension
+
+public extension APIGatewayV2Router {
+
+    /// Mount a Hummingbird router at a path prefix (V2)
+    @discardableResult
+    func mountHummingbird(
+        _ prefix: String,
+        router: Router<LambdaV2RequestContext>
+    ) -> APIGatewayV2Router {
+        let adapter = HummingbirdLambdaAdapter()
+        return mount(prefix) { lambdaContext, apiGwRequest, strippedPath in
+            let handler = adapter.bridgeV2(router, pathOverride: strippedPath)
+            return try await handler(lambdaContext, apiGwRequest)
+        }
+    }
+
+    /// Mount a Hummingbird router at the root (V2)
+    @discardableResult
+    func mountHummingbird(
+        router: Router<LambdaV2RequestContext>
+    ) -> APIGatewayV2Router {
         return mountHummingbird("/", router: router)
     }
 }

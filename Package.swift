@@ -150,7 +150,7 @@ let package = Package(
             ],
             path: "./Tests/SystemTests"
         ),
-        .testTarget(
+        .target(
             name: "TestSupport",
             dependencies: [
                 "MCP",

@@ -782,3 +782,308 @@ public extension APIGatewayRouter {
         return mountMCP(prefix, adapter: LambdaAdapter(), router: LambdaRouter().addServer(server: server))
     }
 }
+
+// MARK: - API Gateway V2 (HTTP API) Support
+
+/// Lambda-specific context for middleware using API Gateway V2
+///
+/// Mirrors `LambdaMCPContext` but holds an `APIGatewayV2Request` instead of V1.
+public struct LambdaMCPV2Context {
+
+    /// Lambda execution context with request ID, logger, and metadata
+    public let lambdaContext: LambdaContext
+
+    /// API Gateway V2 request with headers, path, and query parameters
+    public let apiGatewayV2Request: APIGatewayV2Request
+
+    public init(lambdaContext: LambdaContext, apiGatewayV2Request: APIGatewayV2Request) {
+        self.lambdaContext = lambdaContext
+        self.apiGatewayV2Request = apiGatewayV2Request
+    }
+}
+
+/// Router for AWS Lambda V2 with LambdaMCPV2Context
+public typealias LambdaV2Router = Router<LambdaMCPV2Context>
+
+/// Bridges MCP servers/routers to AWS Lambda via API Gateway HTTP API (V2)
+///
+/// Mirrors `LambdaAdapter` but uses V2 request/response types. Path is read
+/// from `rawPath` and method from `context.http.method`.
+public class LambdaV2Adapter {
+
+    private let preRequestMiddlewareChain = PreRequestMiddlewareChain<TransportEnvelope, LambdaMCPV2Context>()
+    private let postResponseMiddlewareChain = PostResponseMiddlewareChain<AWSLambdaEvents.APIGatewayV2Response, LambdaMCPV2Context>()
+    private let jsonEncoder = JSONEncoder()
+
+    public init() {
+        jsonEncoder.outputFormatting = .sortedKeys
+    }
+
+    /// Add pre-request middleware to the execution chain
+    @discardableResult public func usePrequestMiddleware<M: PreRequestMiddleware>(_ middleware: M) -> LambdaV2Adapter where M.Context == LambdaMCPV2Context, M.MiddlewareEnvelope == TransportEnvelope {
+        preRequestMiddlewareChain.use(middleware.eraseToAnyPreRequestMiddleware())
+        return self
+    }
+
+    /// Add post-response middleware to the execution chain
+    @discardableResult public func usePostResponseMiddleware<M: PostResponseMiddleware>(_ middleware: M) -> LambdaV2Adapter
+    where M.Context == LambdaMCPV2Context,
+          M.Response == AWSLambdaEvents.APIGatewayV2Response {
+        postResponseMiddlewareChain.use(middleware.eraseToAnyPostResponseMiddleware())
+        return self
+    }
+
+    /// Bridge MCP Router to Lambda API Gateway V2 handler
+    public func bridge(_ router: LambdaV2Router) -> (LambdaContext, AWSLambdaEvents.APIGatewayV2Request) async throws -> AWSLambdaEvents.APIGatewayV2Response {
+        return bridge(router, pathOverride: nil)
+    }
+
+    /// Bridge MCP Router to Lambda API Gateway V2 handler with optional path override
+    public func bridge(_ router: LambdaV2Router, pathOverride: String?) -> (LambdaContext, AWSLambdaEvents.APIGatewayV2Request) async throws -> AWSLambdaEvents.APIGatewayV2Response {
+        return { [self] lambdaContext, apiGwRequest in
+            let routePath = pathOverride ?? apiGwRequest.rawPath
+
+            lambdaContext.logger.debug("Received API Gateway V2 request", metadata: [
+                "rawPath": .string(apiGwRequest.rawPath),
+                "routePath": .string(routePath),
+                "httpMethod": .string(apiGwRequest.context.http.method.rawValue),
+                "isBase64Encoded": .stringConvertible(apiGwRequest.isBase64Encoded)
+            ])
+
+            let startTime = Date()
+
+            guard let body = apiGwRequest.body else {
+                throw MCPError(code: .invalidRequest, message: "Missing request body")
+            }
+
+            let bodyData: Data
+            if apiGwRequest.isBase64Encoded {
+                guard let decoded = Data(base64Encoded: body) else {
+                    throw MCPError(code: .invalidRequest, message: "Failed to decode base64 request body")
+                }
+                bodyData = decoded
+            } else {
+                guard let utf8Data = body.data(using: .utf8) else {
+                    throw MCPError(code: .invalidRequest, message: "Failed to decode UTF-8 request body")
+                }
+                bodyData = utf8Data
+            }
+
+            let mcpRequest = try JSONDecoder().decode(Request.self, from: bodyData)
+
+            var envelope = TransportEnvelope(
+                mcpRequest: mcpRequest,
+                routePath: routePath
+            )
+
+            let mcpContext = LambdaMCPV2Context(
+                lambdaContext: lambdaContext,
+                apiGatewayV2Request: apiGwRequest
+            )
+
+            let middlewareResult = try await self.preRequestMiddlewareChain.execute(
+                context: mcpContext,
+                envelope: envelope
+            )
+
+            switch middlewareResult {
+            case .reject(let error):
+                let errorResponse = Response<String>.fromError(
+                    id: mcpRequest.id,
+                    error: error
+                )
+                let errorData = try JSONEncoder().encode(errorResponse)
+                let errorBody = errorData.base64EncodedString()
+                return AWSLambdaEvents.APIGatewayV2Response(
+                    statusCode: .ok,
+                    headers: [
+                        "Content-Type": "application/json",
+                        "Access-Control-Allow-Origin": "*"
+                    ],
+                    body: errorBody,
+                    isBase64Encoded: true
+                )
+
+            case .accept(let updatedEnvelope), .passthrough(let updatedEnvelope):
+                envelope = updatedEnvelope
+            }
+
+            let response = try await router.route(
+                envelope,
+                context: mcpContext,
+                logger: lambdaContext.logger
+            )
+
+            let responseAsRawData = try jsonEncoder.encode(response.data)
+            let responseBody = responseAsRawData.base64EncodedString()
+
+            var apiGatewayResponse = AWSLambdaEvents.APIGatewayV2Response(
+                statusCode: .ok,
+                headers: [
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "POST, OPTIONS",
+                    "Access-Control-Allow-Headers": "Content-Type"
+                ],
+                body: responseBody,
+                isBase64Encoded: true
+            )
+
+            let endTime = Date()
+            let timing = RequestTiming(startTime: startTime, endTime: endTime)
+
+            let responseEnvelope = ResponseEnvelope(
+                request: envelope,
+                response: apiGatewayResponse,
+                timing: timing
+            )
+
+            apiGatewayResponse = try await self.postResponseMiddlewareChain.execute(
+                context: mcpContext,
+                envelope: responseEnvelope
+            )
+
+            return apiGatewayResponse
+        }
+    }
+
+    /// Bridge MCP Server to Lambda API Gateway V2 handler
+    public func bridge(_ server: Server) -> (LambdaContext, AWSLambdaEvents.APIGatewayV2Request) async throws -> AWSLambdaEvents.APIGatewayV2Response {
+        let router = LambdaV2Router().addServer(server: server)
+        return bridge(router)
+    }
+}
+
+/// Convenience bridge for MCP servers without middleware (V2)
+public class MCPLambdaSimpleV2Bridge {
+
+    public init() {}
+
+    public static func bridge(_ router: LambdaV2Router) -> (LambdaContext, AWSLambdaEvents.APIGatewayV2Request) async throws -> AWSLambdaEvents.APIGatewayV2Response {
+        let bridge = LambdaV2Adapter()
+        return bridge.bridge(router)
+    }
+
+    public static func bridge(_ server: Server) -> (LambdaContext, AWSLambdaEvents.APIGatewayV2Request) async throws -> AWSLambdaEvents.APIGatewayV2Response {
+        let bridge = LambdaV2Adapter()
+        return bridge.bridge(server)
+    }
+}
+
+// MARK: - LambdaApp V2 Extensions
+
+public extension LambdaApp {
+
+    /// Add MCP Server with middleware adapter (V2)
+    func addMCPV2(key: String, adapter: LambdaV2Adapter, server: Server) {
+        addAPIGatewayV2(key: key, handler: adapter.bridge(server))
+    }
+
+    /// Add MCP Router with middleware adapter (V2)
+    func addMCPV2(key: String, adapter: LambdaV2Adapter, router: LambdaV2Router) {
+        addAPIGatewayV2(key: key, handler: adapter.bridge(router))
+    }
+
+    /// Add MCP Router without middleware (V2)
+    @discardableResult
+    func addMCPV2(key: String, router: LambdaV2Router) -> LambdaApp {
+        return addAPIGatewayV2(key: key, handler: MCPLambdaSimpleV2Bridge.bridge(router))
+    }
+
+    /// Add MCP Server without middleware (V2)
+    @discardableResult
+    func addMCPV2(key: String, server: Server) -> LambdaApp {
+        return addAPIGatewayV2(key: key, handler: MCPLambdaSimpleV2Bridge.bridge(server))
+    }
+}
+
+// MARK: - V2 Convenience Builder Extensions
+
+public extension Router where Context == LambdaMCPV2Context {
+
+    /// Convert router to Lambda V2 handler without middleware
+    func buildForLambdaV2() -> (LambdaContext, AWSLambdaEvents.APIGatewayV2Request) async throws -> AWSLambdaEvents.APIGatewayV2Response {
+        return MCPLambdaSimpleV2Bridge.bridge(self)
+    }
+}
+
+// MARK: - APIGatewayV2Router MCP Integration
+
+public extension APIGatewayV2Router {
+
+    /// Mount an MCP router at the root with middleware support (V2)
+    @discardableResult
+    func mountMCP(
+        adapter: LambdaV2Adapter,
+        router: LambdaV2Router
+    ) -> APIGatewayV2Router {
+        return mountMCP("/", adapter: adapter, router: router)
+    }
+
+    /// Mount an MCP router at the root without middleware (V2)
+    @discardableResult
+    func mountMCP(
+        router: LambdaV2Router
+    ) -> APIGatewayV2Router {
+        return mountMCP("/", router: router)
+    }
+
+    /// Mount an MCP server at the root with middleware support (V2)
+    @discardableResult
+    func mountMCP(
+        adapter: LambdaV2Adapter,
+        server: Server
+    ) -> APIGatewayV2Router {
+        return mountMCP("/", adapter: adapter, server: server)
+    }
+
+    /// Mount an MCP server at the root without middleware (V2)
+    @discardableResult
+    func mountMCP(
+        server: Server
+    ) -> APIGatewayV2Router {
+        return mountMCP("/", server: server)
+    }
+
+    /// Mount an MCP router at a path prefix with middleware support (V2)
+    @discardableResult
+    func mountMCP(
+        _ prefix: String,
+        adapter: LambdaV2Adapter,
+        router: LambdaV2Router
+    ) -> APIGatewayV2Router {
+        return mount(prefix, handler: { lambdaContext, apiGwRequest, strippedPath in
+            let mcpHandler = adapter.bridge(router, pathOverride: strippedPath)
+            return try await mcpHandler(lambdaContext, apiGwRequest)
+        })
+    }
+
+    /// Mount an MCP router at a path prefix without middleware (V2)
+    @discardableResult
+    func mountMCP(
+        _ prefix: String,
+        router: LambdaV2Router
+    ) -> APIGatewayV2Router {
+        return mountMCP(prefix, adapter: LambdaV2Adapter(), router: router)
+    }
+
+    /// Mount an MCP server at a path prefix with middleware support (V2)
+    @discardableResult
+    func mountMCP(
+        _ prefix: String,
+        adapter: LambdaV2Adapter,
+        server: Server
+    ) -> APIGatewayV2Router {
+        let router = LambdaV2Router().addServer(server: server)
+        return mountMCP(prefix, adapter: adapter, router: router)
+    }
+
+    /// Mount an MCP server at a path prefix without middleware (V2)
+    @discardableResult
+    func mountMCP(
+        _ prefix: String,
+        server: Server
+    ) -> APIGatewayV2Router {
+        return mountMCP(prefix, adapter: LambdaV2Adapter(), router: LambdaV2Router().addServer(server: server))
+    }
+}
