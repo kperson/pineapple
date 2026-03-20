@@ -20,28 +20,29 @@ public struct JSONSchemaMacro: MemberMacro, ExtensionMacro {
             modifier.name.tokenKind == .keyword(.public)
         }
         
-        // Find stored properties
-        let properties = structDecl.memberBlock.members.compactMap { member -> (String, String, Bool)? in
+        // Find stored properties (name, swiftType, isOptional, description?)
+        let properties = structDecl.memberBlock.members.compactMap { member -> (String, String, Bool, String?)? in
             guard let varDecl = member.decl.as(VariableDeclSyntax.self),
                   let binding = varDecl.bindings.first,
                   let identifier = binding.pattern.as(IdentifierPatternSyntax.self) else {
                 return nil
             }
-            
+
             let propertyName = identifier.identifier.text
             let isOptional = binding.typeAnnotation?.type.is(OptionalTypeSyntax.self) ?? false
             let swiftType = extractSwiftType(from: binding.typeAnnotation?.type)
-            
-            return (propertyName, swiftType, isOptional)
+            let description = extractSchemaDescription(from: varDecl)
+
+            return (propertyName, swiftType, isOptional, description)
         }
-        
+
         // Generate schema properties using DSL
-        let schemaProperties = properties.map { (name, swiftType, isOptional) in
-            let schemaType = swiftTypeToSchemaType(swiftType, isOptional: isOptional)
+        let schemaProperties = properties.map { (name, swiftType, isOptional, description) in
+            let schemaType = swiftTypeToSchemaType(swiftType, isOptional: isOptional, description: description)
             return "            \"\(name)\": \(schemaType)"
         }.joined(separator: ",\n")
         
-        let requiredProperties = properties.compactMap { (name, _, isOptional) in
+        let requiredProperties = properties.compactMap { (name, _, isOptional, _) in
             isOptional ? nil : "\"\(name)\""
         }.joined(separator: ", ")
         
@@ -87,28 +88,36 @@ public struct JSONSchemaMacro: MemberMacro, ExtensionMacro {
         return typeAnnotation.description.trimmingCharacters(in: .whitespacesAndNewlines)
     }
     
-    private static func swiftTypeToSchemaType(_ swiftType: String, isOptional: Bool) -> String {
+    private static func swiftTypeToSchemaType(_ swiftType: String, isOptional: Bool, description: String? = nil) -> String {
         let baseType: String
 
         if swiftType.hasPrefix("[") && swiftType.contains(":") {
             // Dictionary type like [String: String] or [String: Int]
             let valueType = extractDictionaryValueType(swiftType)
-            baseType = "[\"type\": \"object\", \"additionalProperties\": \(swiftTypeToSchemaType(valueType, isOptional: false))]"
+            let descPart = description.map { ", \"description\": \"\($0)\"" } ?? ""
+            baseType = "[\"type\": \"object\", \"additionalProperties\": \(swiftTypeToSchemaType(valueType, isOptional: false))\(descPart)]"
         } else if swiftType.hasPrefix("[") {
             let elementType = extractArrayElementType(swiftType)
-            baseType = "[\"type\": \"array\", \"items\": \(swiftTypeToSchemaType(elementType, isOptional: false))]"
+            let descPart = description.map { ", \"description\": \"\($0)\"" } ?? ""
+            baseType = "[\"type\": \"array\", \"items\": \(swiftTypeToSchemaType(elementType, isOptional: false))\(descPart)]"
         } else {
+            let descPart = description.map { ", \"description\": \"\($0)\"" } ?? ""
             baseType = switch swiftType {
-            case "String": "[\"type\": \"string\"]"
-            case "Int", "Int32", "Int64": "[\"type\": \"integer\"]"
-            case "Double", "Float": "[\"type\": \"number\"]"
-            case "Bool": "[\"type\": \"boolean\"]"
-            default: 
+            case "String": "[\"type\": \"string\"\(descPart)]"
+            case "Int", "Int32", "Int64": "[\"type\": \"integer\"\(descPart)]"
+            case "Double", "Float": "[\"type\": \"number\"\(descPart)]"
+            case "Bool": "[\"type\": \"boolean\"\(descPart)]"
+            default:
                 // Reference the nested type's schema
-                "\(swiftType).jsonSchema"
+                if let description {
+                    // Merge description into the referenced schema at runtime
+                    "JSONValue.withDescription(\(swiftType).jsonSchema, \"\(description)\")"
+                } else {
+                    "\(swiftType).jsonSchema"
+                }
             }
         }
-        
+
         return baseType
     }
     
@@ -119,6 +128,22 @@ public struct JSONSchemaMacro: MemberMacro, ExtensionMacro {
             return inner
         }
         return "String" // fallback
+    }
+
+    private static func extractSchemaDescription(from varDecl: VariableDeclSyntax) -> String? {
+        for attribute in varDecl.attributes {
+            guard let attr = attribute.as(AttributeSyntax.self),
+                  let identifierType = attr.attributeName.as(IdentifierTypeSyntax.self),
+                  identifierType.name.text == "SchemaDescription",
+                  let arguments = attr.arguments?.as(LabeledExprListSyntax.self),
+                  let firstArg = arguments.first,
+                  let stringLiteral = firstArg.expression.as(StringLiteralExprSyntax.self),
+                  let segment = stringLiteral.segments.first?.as(StringSegmentSyntax.self) else {
+                continue
+            }
+            return segment.content.text
+        }
+        return nil
     }
 
     private static func extractDictionaryValueType(_ dictType: String) -> String {

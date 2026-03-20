@@ -28,3 +28,18 @@ public macro JSONSchema() = #externalMacro(module: "MCPMacros", type: "JSONSchem
 public protocol JSONSchemaProvider {
     static var jsonSchema: JSONValue { get }
 }
+
+/// Adds a description to a property in the generated JSON schema
+///
+/// Usage:
+/// ```swift
+/// @JSONSchema
+/// struct ToolInput: Codable {
+///     @SchemaDescription("The URL to send the request to")
+///     let url: String
+///
+///     let count: Int  // no description, just "type": "integer"
+/// }
+/// ```
+@attached(peer)
+public macro SchemaDescription(_ description: String) = #externalMacro(module: "MCPMacros", type: "SchemaDescriptionMacro")

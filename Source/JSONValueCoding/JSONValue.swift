@@ -44,6 +44,14 @@ public enum JSONValue: Codable, Sendable, Equatable {
         self = .object(jsonDict)
     }
     
+    /// Adds a "description" key to an object-type JSONValue.
+    /// Used by the @JSONSchema macro to attach descriptions to nested type references.
+    public static func withDescription(_ schema: JSONValue, _ description: String) -> JSONValue {
+        guard case .object(var dict) = schema else { return schema }
+        dict["description"] = .string(description)
+        return .object(dict)
+    }
+
     // MARK: - Accessor Properties
     
     /// Returns true if this value is null

@@ -5,5 +5,6 @@ import SwiftSyntaxMacros
 struct MCPMacrosPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
         JSONSchemaMacro.self,
+        SchemaDescriptionMacro.self,
     ]
 }
