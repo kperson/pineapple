@@ -56,7 +56,8 @@ public struct JSONSchemaMacro: MemberMacro, ExtensionMacro {
         \(accessModifier)static let jsonSchema = JSONValue([
             "type": "object",
             "properties": [\(propertiesLiteral)],
-            "required": [\(requiredProperties)]
+            "required": [\(requiredProperties)],
+            "additionalProperties": false
         ])
         """
         
