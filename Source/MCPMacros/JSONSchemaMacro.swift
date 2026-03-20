@@ -89,8 +89,12 @@ public struct JSONSchemaMacro: MemberMacro, ExtensionMacro {
     
     private static func swiftTypeToSchemaType(_ swiftType: String, isOptional: Bool) -> String {
         let baseType: String
-        
-        if swiftType.hasPrefix("[") {
+
+        if swiftType.hasPrefix("[") && swiftType.contains(":") {
+            // Dictionary type like [String: String] or [String: Int]
+            let valueType = extractDictionaryValueType(swiftType)
+            baseType = "[\"type\": \"object\", \"additionalProperties\": \(swiftTypeToSchemaType(valueType, isOptional: false))]"
+        } else if swiftType.hasPrefix("[") {
             let elementType = extractArrayElementType(swiftType)
             baseType = "[\"type\": \"array\", \"items\": \(swiftTypeToSchemaType(elementType, isOptional: false))]"
         } else {
@@ -113,6 +117,19 @@ public struct JSONSchemaMacro: MemberMacro, ExtensionMacro {
         if arrayType.hasPrefix("[") && arrayType.hasSuffix("]") {
             let inner = String(arrayType.dropFirst().dropLast())
             return inner
+        }
+        return "String" // fallback
+    }
+
+    private static func extractDictionaryValueType(_ dictType: String) -> String {
+        // Handle [Key: Value] syntax — extract the value type
+        if dictType.hasPrefix("[") && dictType.hasSuffix("]") {
+            let inner = String(dictType.dropFirst().dropLast())
+            if let colonIndex = inner.firstIndex(of: ":") {
+                let valueType = inner[inner.index(after: colonIndex)...]
+                    .trimmingCharacters(in: .whitespaces)
+                return valueType
+            }
         }
         return "String" // fallback
     }

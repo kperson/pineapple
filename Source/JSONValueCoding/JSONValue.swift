@@ -23,7 +23,9 @@ public enum JSONValue: Codable, Sendable, Equatable {
     public init(_ dict: [String: Any]) {
         var jsonDict: [String: JSONValue] = [:]
         for (key, value) in dict {
-            if let string = value as? String {
+            if let jsonValue = value as? JSONValue {
+                jsonDict[key] = jsonValue
+            } else if let string = value as? String {
                 jsonDict[key] = .string(string)
             } else if let int = value as? Int {
                 jsonDict[key] = .int(int)
