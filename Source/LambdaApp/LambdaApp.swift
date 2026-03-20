@@ -113,6 +113,30 @@ public protocol APIGatewayHandler: LambdaEventHandler where Event == APIGatewayR
 /// ```
 public protocol APIGatewayV2Handler: LambdaEventHandler where Event == APIGatewayV2Request, Output == APIGatewayV2Response {}
 
+/// Handler for API Gateway WebSocket events
+///
+/// Processes WebSocket lifecycle events ($connect, $disconnect, $default) from
+/// API Gateway WebSocket APIs. Use with `.addAPIGatewayWebSocket()`.
+///
+/// **Event Source:** API Gateway WebSocket API
+///
+/// **Example:**
+/// ```swift
+/// .addAPIGatewayWebSocket(key: "ws-handler") { context, request in
+///     let routeKey = request.context.routeKey
+///     switch routeKey {
+///     case "$connect":
+///         return APIGatewayWebSocketResponse(statusCode: .ok)
+///     case "$disconnect":
+///         return APIGatewayWebSocketResponse(statusCode: .ok)
+///     default:
+///         // Handle messages
+///         return APIGatewayWebSocketResponse(statusCode: .ok)
+///     }
+/// }
+/// ```
+public protocol APIGatewayWebSocketHandler: LambdaEventHandler where Event == APIGatewayWebSocketRequest, Output == APIGatewayWebSocketResponse {}
+
 /// Handler for EventBridge/CloudWatch Events with return value
 ///
 /// Processes custom events from EventBridge or CloudWatch Events and returns a string response.
@@ -190,6 +214,7 @@ public final class LambdaApp: RuntimeEventHandler, @unchecked Sendable {
         case s3(any S3Handler)
         case apiGateway(any APIGatewayHandler)
         case apiGatewayV2(any APIGatewayV2Handler)
+        case apiGatewayWebSocket(any APIGatewayWebSocketHandler)
         case basic(any BasicHandler)
         case basicVoid(any BasicVoidHandler)
     }
@@ -284,6 +309,18 @@ public final class LambdaApp: RuntimeEventHandler, @unchecked Sendable {
         return add(key: key, handler: .apiGatewayV2(ClosureHandler(closure: handler)))
     }
     
+    /// Register API Gateway WebSocket handler with closure
+    @discardableResult
+    public func addAPIGatewayWebSocket(key: String, handler: @escaping (LambdaContext, APIGatewayWebSocketRequest) async throws -> APIGatewayWebSocketResponse) -> LambdaApp {
+        struct ClosureHandler: APIGatewayWebSocketHandler {
+            let closure: (LambdaContext, APIGatewayWebSocketRequest) async throws -> APIGatewayWebSocketResponse
+            func handleEvent(context: LambdaContext, event: APIGatewayWebSocketRequest) async throws -> APIGatewayWebSocketResponse {
+                return try await closure(context, event)
+            }
+        }
+        return add(key: key, handler: .apiGatewayWebSocket(ClosureHandler(closure: handler)))
+    }
+
     /// Register EventBridge handler with closure (uses String for flexibility)
     @discardableResult
     public func addEventBridge(key: String, handler: @escaping (LambdaContext, String) async throws -> Void) -> LambdaApp {
@@ -412,6 +449,14 @@ public final class LambdaApp: RuntimeEventHandler, @unchecked Sendable {
             let apiGatewayV2Event = try JSONDecoder().decode(APIGatewayV2Request.self, from: event.payload.body)
             let response = try await apiGatewayV2Handler.handleEvent(context: context, event: apiGatewayV2Event)
             logger.debug("API Gateway V2 handler completed")
+            let responseData = try JSONEncoder().encode(response)
+            event.sendResponse(data: responseData)
+
+        case .apiGatewayWebSocket(let wsHandler):
+            logger.debug("Starting API Gateway WebSocket handler")
+            let wsEvent = try JSONDecoder().decode(APIGatewayWebSocketRequest.self, from: event.payload.body)
+            let response = try await wsHandler.handleEvent(context: context, event: wsEvent)
+            logger.debug("API Gateway WebSocket handler completed")
             let responseData = try JSONEncoder().encode(response)
             event.sendResponse(data: responseData)
         }

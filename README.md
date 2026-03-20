@@ -64,7 +64,8 @@ app.run(handlerKey: ProcessInfo.processInfo.environment["MY_HANDLER"])
 - **SNS** - Notification topics
 - **S3** - Bucket events (create, delete)
 - **DynamoDB Streams** - Database change events with type-safe CDC
-- **API Gateway** - HTTP requests/responses (V1)
+- **API Gateway** - HTTP requests/responses (V1 and V2)
+- **API Gateway WebSocket** - WebSocket lifecycle events ($connect/$disconnect/$default)
 - **EventBridge** - Scheduled and custom events
 
 📖 **[Full LambdaApp Documentation](Source/LambdaApp/README.md)**
@@ -122,11 +123,17 @@ app.run(handlerKey: "mcp")
 - **Prompts** - Generate conversation templates
 - **Middleware** - Authentication, logging, request modification
 - **Multi-tenant Routing** - Path parameters for customer isolation
+- **OpenAI Integration** - Use MCP tools directly with OpenAI's function calling API
 
 **Transport Adapters:**
 - **[MCPLambda](Source/MCPLambda/README.md)** - AWS Lambda via API Gateway
 - **[MCPHummingbird](Source/MCPHummingbird/README.md)** - HTTP server for local development
 - **[MCPStdio](Source/MCPStdio/README.md)** - Standard I/O for Claude Desktop
+- **[MCPWebSocket](Source/MCPWebSocket/README.md)** - iOS apps via WebSocket relay
+
+**Direct API Integration (no transport needed):**
+- **`openAIToolDefinitions()`** - Export tool schemas in OpenAI function calling format
+- **`executeTool(name:argumentsJSON:)`** - Execute tools directly from OpenAI tool call responses
 
 ### HummingbirdLambda
 
@@ -163,6 +170,66 @@ app.run(handlerKey: "api")
 - API Gateway request access (headers, query params, stage variables)
 
 📖 **[Full HummingbirdLambda Documentation](Source/HummingbirdLambda/README.md)**
+
+### WebSocket Relay (iOS MCP Proxy)
+
+iOS apps can't run HTTP servers, so MCP clients can't call them directly. The WebSocket relay bridges this gap: the iOS app connects **outbound** to an AWS WebSocket endpoint, and MCP clients send HTTP requests to the relay, which forwards them to the iOS app and returns the response.
+
+```
+MCP Client (Claude)                              iOS App
+     |                                              |
+     | POST /mcp/{sessionId}                        | WSS outbound connect
+     | Header: X-API-Key: <key>                     | Header: Authorization: Bearer <jwt>
+     v                                              v
++----------------------------------------------------+
+|               AWS API Gateway                      |
+|  HTTP API                  WebSocket API           |
++------+-----------------------+---------------------+
+       v                       v
+  HTTP Lambda              WS Lambda
+  (HTTPRelayHandler)       (WebSocketRelayHandler)
+       |                       |
+       +------- DynamoDB ------+
+               (sessions + request/response)
+```
+
+**iOS app side** — connect to the relay and expose MCP tools:
+
+```swift
+import MCP
+import MCPWebSocket
+
+let server = Server()
+    .addTool("get_location", description: "Device location",
+             inputType: Empty.self) { _ in
+        return .text("37.7749, -122.4194")
+    }
+
+let relayURL = URL(string: "wss://your-relay.execute-api.us-east-1.amazonaws.com/production")!
+let adapter = WebSocketAdapter(server: server, url: relayURL)
+
+let sessionId = UUID().uuidString  // Share with MCP client
+try await adapter.run(sessionId: sessionId, token: jwtToken)
+```
+
+**Request flow:**
+1. iOS app generates a `sessionId`, connects via WebSocket with JWT auth
+2. iOS app shares `sessionId` with MCP client (e.g., displayed in UI)
+3. MCP client POSTs JSON-RPC request to `/mcp/{sessionId}` with API key
+4. HTTP Lambda forwards request to iOS app via WebSocket (API Gateway Management API)
+5. iOS app processes request through its `MCPServer`, sends response back over WebSocket
+6. HTTP Lambda polls DynamoDB for response, returns it to MCP client
+
+**Security:** Two independent auth layers with pluggable implementations — `WebSocketAuthenticator` for iOS JWT validation, `HTTPClientAuthenticator` for MCP client API key validation.
+
+**Connection management:** Auto-reconnect with exponential backoff (1s-30s), 5-minute ping keep-alive (under API Gateway's 10-min idle timeout).
+
+The relay is three Swift packages:
+- **[MCPWebSocketShared](Source/MCPWebSocketShared/README.md)** - Wire protocol types (no dependencies)
+- **[MCPWebSocket](Source/MCPWebSocket/README.md)** - iOS client adapter
+- **[MCPWebSocketRelay](Source/MCPWebSocketRelay/README.md)** - Lambda relay server (DynamoDB + API Gateway Management API)
+
+Infrastructure is defined in `terraform-support/websocket-api-lambda/` with a complete deployment example in `Build/main.tf`.
 
 📖 **[Full MCP Documentation](Source/MCP/README.md)**
 
@@ -280,12 +347,14 @@ terraform apply -var="test_run_key=my-test-run"
 
 **What Terraform creates:**
 - ECR repository for Docker image
-- 6 Lambda functions (one per event type)
+- 8 Lambda functions (one per event type, plus WebSocket relay pair)
 - Event sources (SQS queue, SNS topic, S3 bucket, DynamoDB table with streams)
-- API Gateway for HTTP handler
+- API Gateway (REST and HTTP API) for HTTP handlers
+- WebSocket API Gateway for relay
+- DynamoDB relay table (connection tracking with sessionId GSI)
 - EventBridge schedule for cron handler
 - DynamoDB verification table
-- IAM roles and policies
+- IAM roles and policies (including `execute-api:ManageConnections` for relay)
 
 ## Running Integration Tests
 
@@ -372,6 +441,9 @@ pineapple/
 │   ├── MCPLambda/              # MCP → Lambda adapter
 │   ├── MCPHummingbird/         # MCP → HTTP adapter
 │   ├── MCPStdio/               # MCP → Stdio adapter
+│   ├── MCPWebSocket/           # MCP → iOS WebSocket relay adapter
+│   ├── MCPWebSocketShared/     # Relay wire protocol types
+│   ├── MCPWebSocketRelay/      # Lambda relay server
 │   ├── HummingbirdLambda/      # Hummingbird → Lambda adapter
 │   ├── JSONSchemaDSL/          # JSON Schema generation
 │   ├── JSONValueCoding/        # JSON value encoding/decoding
@@ -384,6 +456,8 @@ pineapple/
 │   ├── MCPLambdaTests/         # Lambda adapter tests
 │   ├── MCPHummingbirdTests/    # HTTP adapter tests
 │   ├── MCPStdioTests/          # Stdio adapter tests
+│   ├── MCPWebSocketTests/      # WebSocket adapter tests
+│   ├── MCPWebSocketRelayTests/ # Relay handler tests
 │   ├── HummingbirdLambdaTests/ # Hummingbird Lambda adapter tests
 │   └── SystemTests/            # Integration tests (requires AWS)
 ├── Build/                      # Terraform configuration
@@ -402,16 +476,19 @@ pineapple/
 - `MCPLambdaTests` - Lambda adapter
 - `MCPHummingbirdTests` - HTTP adapter
 - `MCPStdioTests` - Stdio adapter
+- `MCPWebSocketTests` - WebSocket adapter (mock WebSocket)
+- `MCPWebSocketRelayTests` - Relay handlers (mock DynamoDB + auth)
 - `HummingbirdLambdaTests` - Hummingbird Lambda adapter
 - `JSONValueCodingTests` - JSON encoding/decoding
 
-**Integration Tests** (slow, requires AWS):
-- `SystemTests` - End-to-end Lambda verification
+**Integration Tests** (requires AWS):
+- `SystemTests` - End-to-end Lambda verification (SQS, SNS, S3, DynamoDB, API Gateway)
+- `WebSocketRelayTests` - End-to-end relay round-trip (WebSocket + HTTP + DynamoDB)
 
 ### Running Tests
 
 ```bash
-# All tests (unit + integration)
+# All unit tests (no AWS required)
 swift test
 
 # LambdaApp tests only
@@ -420,11 +497,13 @@ swift test --filter LambdaAppTests
 # MCP tests only
 swift test --filter MCPTests
 
-# HummingbirdLambda tests only
-swift test --filter HummingbirdLambdaTests
+# WebSocket relay unit tests
+swift test --filter MCPWebSocketTests
+swift test --filter MCPWebSocketRelayTests
 
-# Integration tests (requires AWS)
+# Integration tests (requires AWS + env vars)
 swift test --filter SystemTests
+swift test --filter WebSocketRelayTests
 
 # Specific test
 swift test --filter "LambdaAppTests.EventProcessingTests/sqsEventProcessing"
@@ -433,20 +512,25 @@ swift test --filter "LambdaAppTests.EventProcessingTests/sqsEventProcessing"
 ### Test Results
 
 ```
-✔ Test run with 594 tests passed
+667 tests in 62 suites passed
 
 Breakdown:
 - LambdaApp Tests: ~45 tests
 - MCP Tests: ~450 tests
-- Adapter Tests: ~90 tests (MCP + Hummingbird Lambda)
-- System Tests: 10 tests (requires AWS)
+- Adapter Tests: ~90 tests (Lambda, Hummingbird, Stdio)
+- WebSocket Tests: ~18 tests (adapter + relay handlers)
+- System Tests: ~14 tests (requires AWS)
 ```
 
 ## Environment Variables Reference
 
 ### Lambda Runtime
-- `_HANDLER` - Handler key for routing (e.g., "test.sqs", "test.http")
+- `_HANDLER` - Handler key for routing (e.g., "test.sqs", "test.http", "test.ws-relay")
 - `LOG_LEVEL` - Logging level (trace, debug, info, warning, error)
+
+### Lambda Runtime (WebSocket Relay)
+- `RELAY_TABLE_NAME` - DynamoDB relay table name
+- `WS_MANAGEMENT_ENDPOINT` - API Gateway WebSocket management URL (for PostToConnection)
 
 ### System Tests
 - `AWS_PROFILE` - AWS credentials profile
@@ -457,6 +541,11 @@ Breakdown:
 - `TEST_S3_BUCKET` - S3 bucket name
 - `TEST_TABLE` - DynamoDB table with streams
 - `TEST_API_ENDPOINT` - API Gateway endpoint URL
+- `TEST_API_V2_ENDPOINT` - API Gateway V2 (HTTP API) endpoint URL
+
+### WebSocket Relay E2E Tests
+- `TEST_WS_RELAY_ENDPOINT` - WebSocket relay endpoint (wss://...)
+- `TEST_HTTP_RELAY_ENDPOINT` - HTTP relay endpoint for MCP client requests
 
 ## Contributing
 

@@ -347,9 +347,104 @@ let schema = JSONSchema.object(
 )
 ```
 
+## OpenAI Integration
+
+MCP tools can be used directly with OpenAI's function calling API without a transport adapter. The `Server` class provides two methods that bridge MCP tool definitions to OpenAI's format.
+
+### Getting Tool Definitions
+
+Use `openAIToolDefinitions()` to get all registered tools in OpenAI's expected format:
+
+```swift
+let server = Server()
+    .addTool("get_weather", description: "Get current weather",
+             inputType: WeatherInput.self, outputType: WeatherOutput.self) { request in
+        let weather = try await fetchWeather(city: request.input.city)
+        return WeatherOutput(temperature: weather.temp, condition: weather.condition)
+    }
+
+// Build OpenAI API request
+var requestBody: [String: Any] = [
+    "model": "gpt-4o",
+    "messages": messages
+]
+requestBody["tools"] = server.openAIToolDefinitions()
+
+// Returns:
+// [
+//   {
+//     "type": "function",
+//     "function": {
+//       "name": "get_weather",
+//       "description": "Get current weather",
+//       "parameters": {
+//         "type": "object",
+//         "properties": { "city": { "type": "string" } },
+//         "required": ["city"]
+//       },
+//       "strict": true
+//     }
+//   }
+// ]
+```
+
+### Executing Tool Calls
+
+When OpenAI returns a `tool_calls` response, use `executeTool(name:argumentsJSON:)` to dispatch it:
+
+```swift
+// OpenAI response contains:
+// tool_calls: [{ "name": "get_weather", "arguments": "{\"city\": \"London\"}" }]
+
+for toolCall in toolCalls {
+    let result = try await server.executeTool(
+        name: toolCall.name,
+        argumentsJSON: toolCall.arguments
+    )
+    // result: "{\"temperature\":15,\"condition\":\"cloudy\"}"
+
+    // Send result back to OpenAI as a tool response message
+    messages.append(["role": "tool", "tool_call_id": toolCall.id, "content": result])
+}
+```
+
+### Complete OpenAI Chat Loop
+
+```swift
+import MCP
+
+@JSONSchema
+struct CityInput: Codable {
+    let city: String
+}
+
+@JSONSchema
+struct WeatherOutput: Codable {
+    let temperature: Double
+    let condition: String
+}
+
+// Define tools once using MCP Server
+let server = Server()
+    .addTool("get_weather", description: "Get weather for a city",
+             inputType: CityInput.self, outputType: WeatherOutput.self) { request in
+        return WeatherOutput(temperature: 22.0, condition: "sunny")
+    }
+
+// Use server.openAIToolDefinitions() in your API request body
+// Use server.executeTool(name:argumentsJSON:) when OpenAI returns tool_calls
+// No hardcoded schemas, no manual argument deserialization
+```
+
+This approach gives you:
+- **Single source of truth** — tool schemas are generated from Swift types via `@JSONSchema`
+- **Generic execution** — no `if/else` chains per tool type
+- **Type safety** — input deserialization is handled by `Codable` conformance
+- **Reusability** — the same `Server` can serve MCP clients (via transport adapters) and OpenAI simultaneously
+
 ## Transport Adapters
 
-MCP servers need a transport adapter to communicate with clients:
+MCP servers need a transport adapter to communicate with MCP clients:
 
 | Adapter | Use Case | Module |
 |---------|----------|--------|
@@ -449,22 +544,26 @@ import Testing
 ## Architecture
 
 ```
-                    ┌─────────────────────┐
-                    │   Transport Layer   │
-                    │  (Lambda/HTTP/Stdio)│
-                    └──────────┬──────────┘
-                               │
-                    ┌──────────▼──────────┐
-                    │     MCP Router      │
-                    │  (Path Matching)    │
-                    └──────────┬──────────┘
-                               │
-           ┌───────────────────┼───────────────────┐
-           │                   │                   │
-    ┌──────▼──────┐     ┌──────▼──────┐     ┌──────▼──────┐
-    │   Server A  │     │   Server B  │     │   Server C  │
-    │  (Tools)    │     │ (Resources) │     │  (Prompts)  │
-    └─────────────┘     └─────────────┘     └─────────────┘
+  ┌─────────────────┐     ┌─────────────────────┐
+  │   OpenAI API    │     │   Transport Layer   │
+  │  (Direct Call)  │     │  (Lambda/HTTP/Stdio)│
+  └────────┬────────┘     └──────────┬──────────┘
+           │                         │
+           │  openAIToolDefinitions()│
+           │  executeTool()          │  handleRequest()
+           │                         │
+           └────────────┬────────────┘
+                        │
+             ┌──────────▼──────────┐
+             │     MCP Server      │
+             │  (Tool Registry)    │
+             └──────────┬──────────┘
+                        │
+        ┌───────────────┼───────────────┐
+        │               │               │
+ ┌──────▼──────┐ ┌──────▼──────┐ ┌──────▼──────┐
+ │    Tools    │ │  Resources  │ │   Prompts   │
+ └─────────────┘ └─────────────┘ └─────────────┘
 ```
 
 ## Dependencies

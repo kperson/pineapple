@@ -140,6 +140,83 @@ module "http_v2_test" {
   }
 }
 
+# WebSocket Relay - DynamoDB table for connection tracking
+resource "aws_dynamodb_table" "relay" {
+  name         = "pineappleRelay"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "connectionId"
+  range_key    = "sk"
+
+  attribute {
+    name = "connectionId"
+    type = "S"
+  }
+
+  attribute {
+    name = "sk"
+    type = "S"
+  }
+
+  attribute {
+    name = "sessionId"
+    type = "S"
+  }
+
+  global_secondary_index {
+    name            = "sessionId-index"
+    hash_key        = "sessionId"
+    projection_type = "ALL"
+  }
+
+  ttl {
+    attribute_name = "ttl"
+    enabled        = true
+  }
+}
+
+# WebSocket Relay - WS Lambda (handles $connect/$disconnect/$default)
+module "ws_relay_test" {
+  source           = "../terraform-support/websocket-api-lambda"
+  depends_on       = [module.ecr_push]
+  api_name         = "pineapple-ws-relay"
+  function_name    = "pineapple-ws-relay"
+  role             = module.lambda_role_arn.out
+  ecr_repo_name    = module.ecr_push.ecr_repo_name
+  ecr_repo_tag     = module.ecr_push.ecr_repo_tag
+  memory_size      = 512
+  timeout          = 30
+  handler          = "test.ws-relay"
+
+  env = {
+    TEST_RUN_KEY       = var.test_run_key
+    VERIFY_TABLE       = module.db_verify.id
+    RELAY_TABLE_NAME   = aws_dynamodb_table.relay.name
+    LOG_LEVEL          = var.log_level
+  }
+}
+
+# WebSocket Relay - HTTP Lambda (handles MCP client POST requests)
+module "http_relay_test" {
+  source        = "../terraform-support/http-api-lambda"
+  depends_on    = [module.ecr_push]
+  api_name      = "pineapple-http-relay"
+  function_name = "pineapple-http-relay"
+  role          = module.lambda_role_arn.out
+  ecr_repo_name = module.ecr_push.ecr_repo_name
+  ecr_repo_tag  = module.ecr_push.ecr_repo_tag
+  memory_size   = 512
+  timeout       = 30
+  handler       = "test.http-relay"
+
+  env = {
+    TEST_RUN_KEY           = var.test_run_key
+    VERIFY_TABLE           = module.db_verify.id
+    RELAY_TABLE_NAME       = aws_dynamodb_table.relay.name
+    WS_MANAGEMENT_ENDPOINT = module.ws_relay_test.ws_management_endpoint
+    LOG_LEVEL              = var.log_level
+  }
+}
+
 module "cron_test" {
   source              = "../terraform-support/cron-lambda"
   depends_on          = [module.ecr_push]

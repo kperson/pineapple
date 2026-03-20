@@ -1,7 +1,10 @@
 import Foundation
 import SotoDynamoDB
+import SotoApiGatewayManagementApi
 import SystemTestsCommon
 import LambdaApp
+import MCPWebSocketRelay
+import MCPWebSocketShared
 import Logging
 
  
@@ -111,6 +114,128 @@ let app = LambdaApp()
     }
 }
 
+
+// MARK: - WebSocket Relay Handlers (hardcoded test auth)
+
+// Hardcoded test credentials for E2E testing
+let testJWTToken = "pineapple-test-jwt-token-2024"
+let testAPIKey = "pineapple-test-api-key-2024"
+
+struct TestWebSocketAuthenticator: WebSocketAuthenticator {
+    func validate(token: String) async throws -> AuthResult {
+        if token == testJWTToken {
+            return .valid(principalId: "test-ios-app")
+        }
+        return .invalid
+    }
+}
+
+struct TestHTTPAuthenticator: HTTPClientAuthenticator {
+    func validate(apiKey: String) async throws -> Bool {
+        return apiKey == testAPIKey
+    }
+}
+
+// Build relay handlers
+let relayTableName = ProcessInfo.processInfo.environment["RELAY_TABLE_NAME"] ?? "pineappleRelay"
+let wsManagementEndpoint = ProcessInfo.processInfo.environment["WS_MANAGEMENT_ENDPOINT"] ?? ""
+
+let relayConfig = RelayConfig(
+    tableName: relayTableName,
+    wsManagementEndpoint: wsManagementEndpoint,
+    timeoutSeconds: 25,
+    pollIntervalSeconds: 0.3
+)
+
+let relayStore = DynamoDBRelayStore(dynamoDB: dynamoDB, config: relayConfig)
+
+let wsRelayHandler = WebSocketRelayHandler(
+    store: relayStore,
+    authenticator: TestWebSocketAuthenticator()
+)
+
+let managementApi = ApiGatewayManagementApi(
+    client: client,
+    endpoint: wsManagementEndpoint
+)
+
+let httpRelayHandler = HTTPRelayHandler(
+    store: relayStore,
+    authenticator: TestHTTPAuthenticator(),
+    managementAPI: SotoWebSocketManagementAPI(client: managementApi),
+    config: relayConfig
+)
+
+// WebSocket relay Lambda handler ($connect, $disconnect, $default)
+app.addAPIGatewayWebSocket(key: "test.ws-relay") { context, request in
+    let routeKey = request.context.routeKey
+    let connectionId = request.context.connectionId
+
+    context.logger.info("WebSocket relay event: routeKey=\(routeKey) connectionId=\(connectionId)")
+
+    let result: WebSocketRelayHandler.WebSocketHandlerResult
+
+    switch routeKey {
+    case "$connect":
+        // Extract headers
+        var headers: [String: String] = [:]
+        if let h = request.headers {
+            for (key, value) in h {
+                headers[key] = value
+            }
+        }
+
+        // sessionId is passed as X-Session-Id header (since APIGatewayWebSocketRequest
+        // doesn't model queryStringParameters, we use a header instead)
+        let queryParams: [String: String] = [
+            "sessionId": headers["X-Session-Id"] ?? headers["x-session-id"] ?? ""
+        ]
+
+        result = try await wsRelayHandler.handleConnect(
+            connectionId: connectionId,
+            headers: headers,
+            queryParams: queryParams
+        )
+
+    case "$disconnect":
+        result = try await wsRelayHandler.handleDisconnect(connectionId: connectionId)
+
+    default:
+        result = try await wsRelayHandler.handleDefault(
+            connectionId: connectionId,
+            body: request.body ?? ""
+        )
+    }
+
+    return APIGatewayWebSocketResponse(
+        statusCode: .init(code: result.statusCode),
+        body: result.body
+    )
+}
+
+// HTTP relay Lambda handler (MCP client POST /mcp/{sessionId})
+app.addAPIGatewayV2(key: "test.http-relay") { context, request in
+    context.logger.info("HTTP relay request: \(request.context.http.method) \(request.rawPath)")
+
+    // Extract sessionId from path (e.g., /mcp/{sessionId})
+    let pathComponents = request.rawPath.split(separator: "/")
+    let sessionId = pathComponents.last.map(String.init) ?? ""
+
+    let apiKey = request.headers["x-api-key"]
+    let body = request.body?.data(using: .utf8) ?? Data()
+
+    let result = try await httpRelayHandler.handleRequest(
+        sessionId: sessionId,
+        apiKey: apiKey,
+        body: body
+    )
+
+    return APIGatewayV2Response(
+        statusCode: .init(code: result.statusCode),
+        headers: ["Content-Type": result.contentType],
+        body: result.body.flatMap { String(data: $0, encoding: .utf8) }
+    )
+}
 
 let logLevel = ProcessInfo.processInfo.environment["LOG_LEVEL"]
     .flatMap { Logger.Level(rawValue: $0.lowercased()) }

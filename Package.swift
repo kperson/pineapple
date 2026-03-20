@@ -5,7 +5,8 @@ import CompilerPluginSupport
 let package = Package(
     name: "pineapple",
     platforms: [
-        .macOS(.v15)
+        .macOS(.v15),
+        .iOS(.v16)
     ],
     products: [
         .library(name: "LambdaApp", targets: ["LambdaApp"]),
@@ -16,6 +17,9 @@ let package = Package(
         .library(name: "MCPHummingbird", targets: ["MCPHummingbird"]),
         .library(name: "MCPStdio", targets: ["MCPStdio"]),
         .library(name: "HummingbirdLambda", targets: ["HummingbirdLambda"]),
+        .library(name: "MCPWebSocketShared", targets: ["MCPWebSocketShared"]),
+        .library(name: "MCPWebSocket", targets: ["MCPWebSocket"]),
+        .library(name: "MCPWebSocketRelay", targets: ["MCPWebSocketRelay"]),
         .library(name: "SimpleMathServer", targets: ["SimpleMathServer"]),
         .executable(name: "MCPExample", targets: ["MCPExample"])
     ],
@@ -94,6 +98,34 @@ let package = Package(
             exclude: ["README.md"]
         ),
         .target(
+            name: "MCPWebSocketShared",
+            dependencies: [],
+            path: "./Source/MCPWebSocketShared",
+            exclude: ["README.md"]
+        ),
+        .target(
+            name: "MCPWebSocket",
+            dependencies: [
+                "MCP",
+                "MCPWebSocketShared",
+                .product(name: "Logging", package: "swift-log")
+            ],
+            path: "./Source/MCPWebSocket",
+            exclude: ["README.md"]
+        ),
+        .target(
+            name: "MCPWebSocketRelay",
+            dependencies: [
+                "MCP",
+                "MCPWebSocketShared",
+                .product(name: "SotoDynamoDB", package: "soto"),
+                .product(name: "SotoApiGatewayManagementApi", package: "soto"),
+                .product(name: "Logging", package: "swift-log")
+            ],
+            path: "./Source/MCPWebSocketRelay",
+            exclude: ["README.md"]
+        ),
+        .target(
             name: "HummingbirdLambda",
             dependencies: [
                 "LambdaApp",
@@ -133,7 +165,10 @@ let package = Package(
             dependencies: [
                 "SystemTestsCommon",
                 "LambdaApp",
+                "MCPWebSocketRelay",
+                "MCPWebSocketShared",
                 .product(name: "SotoDynamoDB", package: "soto"),
+                .product(name: "SotoApiGatewayManagementApi", package: "soto"),
                 .product(name: "Logging", package: "swift-log")
             ],
             path: "./Source/LambdaHandler"
@@ -143,6 +178,7 @@ let package = Package(
             dependencies: [
                 "SystemTestsCommon",
                 "LambdaApp",
+                "MCPWebSocketShared",
                 .product(name: "SotoDynamoDB", package: "soto"),
                 .product(name: "SotoSQS", package: "soto"),
                 .product(name: "SotoSNS", package: "soto"),
@@ -202,6 +238,24 @@ let package = Package(
             dependencies: [
                 "LambdaApp"
             ]
+        ),
+        .testTarget(
+            name: "MCPWebSocketTests",
+            dependencies: [
+                "MCPWebSocket",
+                "MCPWebSocketShared",
+                "MCP"
+            ],
+            path: "./Tests/MCPWebSocketTests"
+        ),
+        .testTarget(
+            name: "MCPWebSocketRelayTests",
+            dependencies: [
+                "MCPWebSocketRelay",
+                "MCPWebSocketShared",
+                "MCP"
+            ],
+            path: "./Tests/MCPWebSocketRelayTests"
         ),
         .testTarget(
             name: "HummingbirdLambdaTests",

@@ -15,9 +15,11 @@ data "aws_iam_policy_document" "dynamo_consolidated" {
       module.db_test.arn,
       module.db_verify.arn,
       module.dynamo_stream.arn,
+      aws_dynamodb_table.relay.arn,
       "${module.db_test.arn}/index/*",
       "${module.db_verify.arn}/index/*",
-      "${module.dynamo_stream.arn}/index/*"
+      "${module.dynamo_stream.arn}/index/*",
+      "${aws_dynamodb_table.relay.arn}/index/*"
     ]
   }
 
@@ -33,6 +35,16 @@ data "aws_iam_policy_document" "dynamo_consolidated" {
       module.db_test.stream_arn,
       module.db_verify.stream_arn,
       module.dynamo_stream.stream_arn
+    ]
+  }
+
+  # API Gateway Management API (PostToConnection for WebSocket relay)
+  statement {
+    actions = [
+      "execute-api:ManageConnections"
+    ]
+    resources = [
+      "${module.ws_relay_test.ws_execution_arn}/*"
     ]
   }
 }

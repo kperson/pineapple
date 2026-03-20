@@ -206,6 +206,81 @@ public enum JSONValue: Codable, Sendable, Equatable {
             return nil
         }
     }
+
+    /// Converts this `JSONValue` to a native Swift type suitable for `JSONSerialization`
+    ///
+    /// Recursively converts the entire value tree into Foundation-compatible types.
+    /// This is useful when you need to pass `JSONValue` data to APIs that expect
+    /// `[String: Any]` dictionaries (e.g., `JSONSerialization.data(withJSONObject:)`).
+    ///
+    /// ## Type Mapping
+    ///
+    /// | JSONValue case | Swift type |
+    /// |----------------|------------|
+    /// | `.null` | `NSNull` |
+    /// | `.bool` | `Bool` |
+    /// | `.int`, `.int8`, `.int16`, `.int32`, `.int64` | `Int` |
+    /// | `.uint`, `.uint8`, `.uint16`, `.uint32` | `Int` |
+    /// | `.uint64` | `UInt64` |
+    /// | `.double` | `Double` |
+    /// | `.decimal` | `NSDecimalNumber` |
+    /// | `.string` | `String` |
+    /// | `.array` | `[Any]` |
+    /// | `.object` | `[String: Any]` |
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// let schema: JSONValue = .object([
+    ///     "type": .string("object"),
+    ///     "properties": .object([
+    ///         "name": .object(["type": .string("string")])
+    ///     ])
+    /// ])
+    ///
+    /// let dict = schema.toAny() as! [String: Any]
+    /// let data = try JSONSerialization.data(withJSONObject: dict)
+    /// ```
+    ///
+    /// - Returns: A Foundation-compatible value (`[String: Any]`, `[Any]`, `String`, `Int`, `Double`, `Bool`, or `NSNull`)
+    public func toAny() -> Any {
+        switch self {
+        case .null:
+            return NSNull()
+        case .bool(let value):
+            return value
+        case .int(let value):
+            return value
+        case .int8(let value):
+            return Int(value)
+        case .int16(let value):
+            return Int(value)
+        case .int32(let value):
+            return Int(value)
+        case .int64(let value):
+            return Int(value)
+        case .uint(let value):
+            return Int(value)
+        case .uint8(let value):
+            return Int(value)
+        case .uint16(let value):
+            return Int(value)
+        case .uint32(let value):
+            return Int(value)
+        case .uint64(let value):
+            return UInt64(value)
+        case .double(let value):
+            return value
+        case .decimal(let value):
+            return NSDecimalNumber(decimal: value)
+        case .string(let value):
+            return value
+        case .array(let values):
+            return values.map { $0.toAny() }
+        case .object(let dict):
+            return dict.mapValues { $0.toAny() }
+        }
+    }
     
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()

@@ -74,7 +74,7 @@ struct HandlerExecutionTests {
         case .sqs(_):
             // Expected case
             break
-        case .sns(_), .s3(_), .dynamodb(_), .apiGateway(_), .apiGatewayV2(_), .basic(_), .basicVoid(_):
+        case .sns(_), .s3(_), .dynamodb(_), .apiGateway(_), .apiGatewayV2(_), .apiGatewayWebSocket(_), .basic(_), .basicVoid(_):
             Issue.record("Unexpected handler type")
         }
     }

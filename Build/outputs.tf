@@ -45,6 +45,26 @@ output "aws_region" {
   value       = var.aws_region
 }
 
+output "ws_relay_endpoint" {
+  description = "WebSocket relay endpoint (wss://...)"
+  value       = module.ws_relay_test.ws_endpoint
+}
+
+output "ws_relay_management_endpoint" {
+  description = "WebSocket relay management endpoint (for PostToConnection)"
+  value       = module.ws_relay_test.ws_management_endpoint
+}
+
+output "http_relay_endpoint" {
+  description = "HTTP relay endpoint for MCP client requests"
+  value       = module.http_relay_test.endpoint
+}
+
+output "relay_table_name" {
+  description = "DynamoDB relay table name"
+  value       = aws_dynamodb_table.relay.name
+}
+
 # Helper output for setting all environment variables at once
 output "systemtest_env_vars" {
   description = "All environment variables for SystemTests (copy-paste ready)"
@@ -58,6 +78,9 @@ output "systemtest_env_vars" {
     export TEST_TABLE=${module.dynamo_stream.id}
     export TEST_API_ENDPOINT=${module.http_test.endpoint}
     export TEST_API_V2_ENDPOINT=${module.http_v2_test.endpoint}
+    export TEST_WS_RELAY_ENDPOINT=${module.ws_relay_test.ws_endpoint}
+    export TEST_HTTP_RELAY_ENDPOINT=${module.http_relay_test.endpoint}
+    export TEST_RELAY_TABLE=${aws_dynamodb_table.relay.name}
 
     # Note: AWS_PROFILE is already set in your environment or use the same credentials as Terraform
   EOT
