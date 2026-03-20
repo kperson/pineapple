@@ -48,13 +48,14 @@ public struct JSONSchemaMacro: MemberMacro, ExtensionMacro {
         
         // Add 'public' modifier if the struct is public
         let accessModifier = isPublic ? "public " : ""
-        
+
+        // Use [:] for empty properties to ensure Swift infers a dictionary, not an array
+        let propertiesLiteral = schemaProperties.isEmpty ? ":" : "\n            \(schemaProperties)\n            "
+
         let schemaCode = """
         \(accessModifier)static let jsonSchema = JSONValue([
             "type": "object",
-            "properties": [
-            \(schemaProperties)
-            ],
+            "properties": [\(propertiesLiteral)],
             "required": [\(requiredProperties)]
         ])
         """
