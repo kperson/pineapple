@@ -510,7 +510,8 @@ public class LambdaRuntime: Runtime, @unchecked Sendable {
                 method: "GET",
                 path: "2018-06-01/runtime/invocation/next",
                 body: nil,
-                headers: [:]
+                headers: [:],
+                timeoutInterval: 300,
             ) { res, err in
                 if let r = res,
                    let requestId = r.headers["Lambda-Runtime-Aws-Request-Id".lowercased()] {
@@ -523,7 +524,7 @@ public class LambdaRuntime: Runtime, @unchecked Sendable {
                         self.logger?.warning("Received response without request ID header. Available headers: \(r.headers.keys.joined(separator: ", "))")
                     }
                     if let err = err {
-                        self.logger?.error("Event polling failed: \(err.localizedDescription)")
+                        self.logger?.warning("Event polling failed: \(err.localizedDescription)")
                     }
                     self.next()
                 }
@@ -599,6 +600,7 @@ public class LambdaRuntime: Runtime, @unchecked Sendable {
         path: String,
         body: Data?,
         headers: [String : String],
+        timeoutInterval: TimeInterval = 60,
         callback: @escaping @Sendable (LambdaRequestResponse?, Error?) -> Void
     ) {
         httpClient.request(
@@ -607,6 +609,7 @@ public class LambdaRuntime: Runtime, @unchecked Sendable {
             body: body,
             headers: headers,
             runtimeAPI: runtimeAPI,
+            timeoutInterval: timeoutInterval,
             callback: callback
         )
     }

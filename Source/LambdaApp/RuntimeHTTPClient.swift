@@ -34,6 +34,29 @@ public protocol RuntimeHTTPClient: Sendable {
     ///   - body: Optional request body
     ///   - headers: HTTP headers
     ///   - runtimeAPI: The runtime API endpoint
+    ///   - timeoutInterval: The request timeout
+    ///   - callback: Completion handler with response or error
+    func request(
+        method: String,
+        path: String,
+        body: Data?,
+        headers: [String: String],
+        runtimeAPI: String,
+        timeoutInterval: TimeInterval,
+        callback: @escaping @Sendable (LambdaRequestResponse?, Error?) -> Void
+    )
+}
+
+public extension RuntimeHTTPClient {
+    
+    /// Makes an HTTP request to the Lambda Runtime API
+    ///
+    /// - Parameters:
+    ///   - method: HTTP method (GET, POST, etc.)
+    ///   - path: API path (e.g., "2018-06-01/runtime/invocation/next")
+    ///   - body: Optional request body
+    ///   - headers: HTTP headers
+    ///   - runtimeAPI: The runtime API endpoint
     ///   - callback: Completion handler with response or error
     func request(
         method: String,
@@ -42,7 +65,16 @@ public protocol RuntimeHTTPClient: Sendable {
         headers: [String: String],
         runtimeAPI: String,
         callback: @escaping @Sendable (LambdaRequestResponse?, Error?) -> Void
-    )
+    ) {
+        return request(
+            method: method,
+            path: path, body: body,
+            headers: headers,
+            runtimeAPI: runtimeAPI,
+            timeoutInterval: 60,
+            callback: callback
+        )
+    }
 }
 
 // MARK: - Production Implementation
@@ -65,6 +97,7 @@ public final class URLSessionRuntimeClient: RuntimeHTTPClient, @unchecked Sendab
         body: Data?,
         headers: [String: String],
         runtimeAPI: String,
+        timeoutInterval: TimeInterval,
         callback: @escaping @Sendable (LambdaRequestResponse?, Error?) -> Void
     ) {
         logger?.trace("Runtime request started: \(path)")
@@ -79,7 +112,7 @@ public final class URLSessionRuntimeClient: RuntimeHTTPClient, @unchecked Sendab
         var request = URLRequest(
             url: URL(string: urlStr)!,
             cachePolicy: .useProtocolCachePolicy,
-            timeoutInterval: 60
+            timeoutInterval: timeoutInterval
         )
         request.httpMethod = method
         request.httpBody = body
@@ -210,6 +243,7 @@ public final class MockRuntimeClient: RuntimeHTTPClient, @unchecked Sendable {
         body: Data?,
         headers: [String: String],
         runtimeAPI: String,
+        timeoutInterval: TimeInterval,
         callback: @escaping @Sendable (LambdaRequestResponse?, Error?) -> Void
     ) {
         lock.lock()
