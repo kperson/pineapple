@@ -71,7 +71,13 @@ public struct JSONSchemaMacro: MemberMacro, ExtensionMacro {
         conformingTo protocols: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [ExtensionDeclSyntax] {
-        let extensionDecl = try ExtensionDeclSyntax("extension \(type): JSONSchemaProvider {}")
+        // Tool I/O types are essentially always value-only-Codable. We add
+        // Sendable here so adopters don't have to write `: Sendable` next to
+        // `: Codable` on every `@JSONSchema` struct (Pineapple's `Server.addTool`
+        // closure is `@Sendable`, so the conformance was always required).
+        let extensionDecl = try ExtensionDeclSyntax(
+            "extension \(type): JSONSchemaProvider, Sendable {}"
+        )
         return [extensionDecl]
     }
     
@@ -109,6 +115,10 @@ public struct JSONSchemaMacro: MemberMacro, ExtensionMacro {
             case "Int", "Int32", "Int64": "[\"type\": \"integer\"\(descPart)]"
             case "Double", "Float": "[\"type\": \"number\"\(descPart)]"
             case "Bool": "[\"type\": \"boolean\"\(descPart)]"
+            case "Date":   "[\"type\": \"string\", \"format\": \"date-time\"\(descPart)]"
+            case "UUID":   "[\"type\": \"string\", \"format\": \"uuid\"\(descPart)]"
+            case "URL":    "[\"type\": \"string\", \"format\": \"uri\"\(descPart)]"
+            case "Data":   "[\"type\": \"string\", \"contentEncoding\": \"base64\"\(descPart)]"
             default:
                 // Reference the nested type's schema
                 if let description {

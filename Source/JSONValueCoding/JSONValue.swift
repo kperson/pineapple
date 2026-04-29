@@ -324,6 +324,13 @@ public enum JSONValue: Codable, Sendable, Equatable {
         }
     }
     
+    // MARK: - Literal expressibility
+    //
+    // These conformances let adopters write JSON-shaped literals like
+    // `["type": "string", "format": "date-time"]` and have them inferred as
+    // `JSONValue` when the contextual type is known. Especially useful for
+    // building tool input/output schemas by hand.
+
     public func encode(to encoder: Encoder) throws {
         switch self {
         case .null:
@@ -381,6 +388,53 @@ public enum JSONValue: Codable, Sendable, Equatable {
                 try container.encode(jsonValue, forKey: codingKey)
             }
         }
+    }
+}
+
+extension JSONValue: ExpressibleByNilLiteral {
+    public init(nilLiteral: ()) {
+        self = .null
+    }
+}
+
+extension JSONValue: ExpressibleByBooleanLiteral {
+    public init(booleanLiteral value: Bool) {
+        self = .bool(value)
+    }
+}
+
+extension JSONValue: ExpressibleByIntegerLiteral {
+    public init(integerLiteral value: Int) {
+        self = .int(value)
+    }
+}
+
+extension JSONValue: ExpressibleByFloatLiteral {
+    public init(floatLiteral value: Double) {
+        self = .double(value)
+    }
+}
+
+extension JSONValue: ExpressibleByStringLiteral {
+    public init(stringLiteral value: String) {
+        self = .string(value)
+    }
+}
+
+extension JSONValue: ExpressibleByArrayLiteral {
+    public init(arrayLiteral elements: JSONValue...) {
+        self = .array(elements)
+    }
+}
+
+extension JSONValue: ExpressibleByDictionaryLiteral {
+    public init(dictionaryLiteral elements: (String, JSONValue)...) {
+        var dict: [String: JSONValue] = [:]
+        dict.reserveCapacity(elements.count)
+        for (key, value) in elements {
+            dict[key] = value
+        }
+        self = .object(dict)
     }
 }
 

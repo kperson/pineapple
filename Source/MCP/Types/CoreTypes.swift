@@ -206,7 +206,7 @@ public struct Response<Result: Encodable>: Encodable {
 /// let stringId = RequestId.string("req-123")
 /// let numberId = RequestId.number(42)
 /// ```
-public enum RequestId: Codable {
+public enum RequestId: Codable, Sendable {
 
     /// String-based request identifier
     case string(String)
@@ -628,7 +628,13 @@ public struct TransportResponse {
 ///
 /// MCPContext is a struct and is passed by value, making it inherently thread-safe.
 /// The metadata dictionary is immutable once created.
-public struct MCPContext {
+/// `@unchecked Sendable` because `metadata: [String: Any]` can technically
+/// hold non-Sendable values, but the struct itself is immutable
+/// (`let` everywhere) and the documented use is for Sendable-friendly
+/// values like userId / tenantId / traceId / sourceIP. Adopters who put
+/// non-Sendable things into metadata get undefined behavior across actors —
+/// which they were already opting into the moment they typed `Any`.
+public struct MCPContext: @unchecked Sendable {
 
     /// JSON-RPC 2.0 request identifier
     ///
@@ -654,7 +660,9 @@ public struct MCPContext {
     /// tracing context, etc.). The exact keys depend on the adapter being used
     /// (Lambda, Hummingbird, Stdio).
     ///
-    /// Common keys: userId, tenantId, roles, traceId, sourceIP, headers
+    /// Common keys: userId, tenantId, roles, traceId, sourceIP, headers.
+    /// Stored as `[String: Any]` for backwards compatibility — see the
+    /// `@unchecked Sendable` note on the type.
     public let metadata: [String: Any]
 
     public init(requestId: RequestId, method: String, logger: Logger, metadata: [String: Any]) {

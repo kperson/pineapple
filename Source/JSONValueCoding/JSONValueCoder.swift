@@ -43,8 +43,14 @@ public struct JSONValueEncoder {
     /// - Throws: EncodingError if encoding fails
     public func encode<T: Encodable>(_ value: T) throws -> JSONValue {
         // Handle special types that have their own Codable implementations
-        // but we want to encode directly to JSONValue cases
-        if let decimal = value as? Decimal {
+        // but we want to encode directly to JSONValue cases.
+        //
+        // `Date` becomes an ISO 8601 string — the default for tool wire
+        // formats. The matching JSONSchema (advertised by `Date.jsonSchema`)
+        // is `{"type": "string", "format": "date-time"}`.
+        if let date = value as? Date {
+            return .string(JSONValueDateFormatter.string(from: date))
+        } else if let decimal = value as? Decimal {
             return .decimal(decimal)
         } else if let int8 = value as? Int8 {
             return .int8(int8)
@@ -123,8 +129,25 @@ public struct JSONValueDecoder {
     /// - Throws: DecodingError if decoding fails
     public func decode<T: Decodable>(_ type: T.Type, from jsonValue: JSONValue) throws -> T {
         // Handle special types that have their own Codable implementations
-        // but we want to decode directly from JSONValue cases
-        if T.self == Decimal.self {
+        // but we want to decode directly from JSONValue cases.
+        //
+        // `Date` is read as an ISO 8601 string. Both `2026-04-28T15:30:00Z`
+        // and `2026-04-28T15:30:00.123Z` (fractional seconds) are accepted.
+        if T.self == Date.self {
+            guard case .string(let str) = jsonValue else {
+                throw DecodingError.typeMismatch(Date.self, .init(
+                    codingPath: [],
+                    debugDescription: "Expected ISO 8601 date-time string for Date, got \(jsonValue)"
+                ))
+            }
+            guard let date = JSONValueDateFormatter.date(from: str) else {
+                throw DecodingError.dataCorrupted(.init(
+                    codingPath: [],
+                    debugDescription: "Could not parse '\(str)' as ISO 8601 date-time"
+                ))
+            }
+            return date as! T
+        } else if T.self == Decimal.self {
             return try decode(Decimal.self, from: jsonValue) as! T
         } else if T.self == Int8.self {
             return try decode(Int8.self, from: jsonValue) as! T
@@ -487,6 +510,11 @@ private struct JSONValueKeyedEncodingContainer<Key: CodingKey>: KeyedEncodingCon
     }
 
     mutating func encode<T>(_ value: T, forKey key: Key) throws where T: Encodable {
+        if let date = value as? Date {
+            dict[key.stringValue] = .string(JSONValueDateFormatter.string(from: date))
+            encoder.value = .object(dict)
+            return
+        }
         let subEncoder = _JSONValueEncoder()
         subEncoder.codingPath = encoder.codingPath + [key]
         subEncoder.userInfo = encoder.userInfo
@@ -624,6 +652,11 @@ private struct JSONValueUnkeyedEncodingContainer: UnkeyedEncodingContainer {
     }
 
     mutating func encode<T>(_ value: T) throws where T: Encodable {
+        if let date = value as? Date {
+            array.append(.string(JSONValueDateFormatter.string(from: date)))
+            encoder.value = .array(array)
+            return
+        }
         let subEncoder = _JSONValueEncoder()
         try value.encode(to: subEncoder)
         array.append(subEncoder.value ?? .null)
@@ -719,6 +752,10 @@ private struct JSONValueSingleValueEncodingContainer: SingleValueEncodingContain
     }
 
     mutating func encode<T>(_ value: T) throws where T: Encodable {
+        if let date = value as? Date {
+            encoder.value = .string(JSONValueDateFormatter.string(from: date))
+            return
+        }
         try value.encode(to: encoder)
     }
 }
@@ -1084,6 +1121,25 @@ private struct JSONValueKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingCon
                 )
             )
         }
+        // Date is handled here too — `Foundation.Date` round-trips as an
+        // ISO 8601 string in tool wire format. Numeric values are rejected
+        // explicitly so we don't silently accept Foundation's default
+        // reference-date encoding.
+        if T.self == Date.self {
+            guard case .string(let str) = value else {
+                throw DecodingError.typeMismatch(Date.self, .init(
+                    codingPath: codingPath + [key],
+                    debugDescription: "Expected ISO 8601 date-time string for Date, got \(value)"
+                ))
+            }
+            guard let date = JSONValueDateFormatter.date(from: str) else {
+                throw DecodingError.dataCorrupted(.init(
+                    codingPath: codingPath + [key],
+                    debugDescription: "Could not parse '\(str)' as ISO 8601 date-time"
+                ))
+            }
+            return date as! T
+        }
         let subDecoder = _JSONValueDecoder(value: value, codingPath: decoder.codingPath + [key])
         subDecoder.userInfo = decoder.userInfo
         return try T(from: subDecoder)
@@ -1323,6 +1379,22 @@ private struct JSONValueUnkeyedDecodingContainer: UnkeyedDecodingContainer {
             )
         }
         let value = array[currentIndex]
+        if T.self == Date.self {
+            guard case .string(let str) = value else {
+                throw DecodingError.typeMismatch(Date.self, .init(
+                    codingPath: codingPath,
+                    debugDescription: "Expected ISO 8601 date-time string for Date, got \(value)"
+                ))
+            }
+            guard let date = JSONValueDateFormatter.date(from: str) else {
+                throw DecodingError.dataCorrupted(.init(
+                    codingPath: codingPath,
+                    debugDescription: "Could not parse '\(str)' as ISO 8601 date-time"
+                ))
+            }
+            currentIndex += 1
+            return date as! T
+        }
         let indexKey = JSONValueIndexKey(intValue: currentIndex)!
         let subDecoder = _JSONValueDecoder(value: value, codingPath: decoder.codingPath + [indexKey])
         subDecoder.userInfo = decoder.userInfo
@@ -1525,6 +1597,21 @@ private struct JSONValueSingleValueDecodingContainer: SingleValueDecodingContain
     }
 
     func decode<T>(_ type: T.Type) throws -> T where T: Decodable {
+        if T.self == Date.self {
+            guard case .string(let str) = value else {
+                throw DecodingError.typeMismatch(Date.self, .init(
+                    codingPath: codingPath,
+                    debugDescription: "Expected ISO 8601 date-time string for Date, got \(value)"
+                ))
+            }
+            guard let date = JSONValueDateFormatter.date(from: str) else {
+                throw DecodingError.dataCorrupted(.init(
+                    codingPath: codingPath,
+                    debugDescription: "Could not parse '\(str)' as ISO 8601 date-time"
+                ))
+            }
+            return date as! T
+        }
         return try T(from: decoder)
     }
 }

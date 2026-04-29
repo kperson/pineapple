@@ -43,7 +43,7 @@ import JSONValueCoding
 ///     return .text(content)
 /// }
 /// ```
-public struct ToolHandlerRequest<Input> {
+public struct ToolHandlerRequest<Input>: Sendable where Input: Sendable {
 
     /// MCP request context with requestId, method, logger, and metadata
     public let context: MCPContext

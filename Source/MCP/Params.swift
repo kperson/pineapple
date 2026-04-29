@@ -74,7 +74,7 @@ import JSONValueCoding
 /// let customerId = pathParams.string("customerId")
 /// let customerDB = Database.connect(tenant: customerId)
 /// ```
-public struct Params {
+public struct Params: Sendable {
     private let values: [String: String]
 
     /// Initialize with extracted parameter values

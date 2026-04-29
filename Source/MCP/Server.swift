@@ -46,7 +46,15 @@ public class Server {
     
     private let jsonValueDecoder = JSONValueDecoder()
     private let jsonValueEncoder = JSONValueEncoder()
-    private let jsonEncoder = JSONEncoder()
+    private let jsonEncoder: JSONEncoder = {
+        let e = JSONEncoder()
+        // Tool wire formats use ISO 8601 dates (matches the schema advertised
+        // by `Date.jsonSchema`). LLMs are trained on this format; numeric
+        // reference-date seconds — Foundation's default — are essentially
+        // opaque to a model.
+        e.dateEncodingStrategy = .iso8601
+        return e
+    }()
     
     
     public init(logger: Logger = Logger(label: "mcp-server")) {
@@ -121,8 +129,10 @@ public class Server {
     
         // Wrap the rich content handler to return standard JSON
         let wrappedHandler: (MCPContext, JSONValue, Params?) async throws -> ToolCallResponse = { [unowned self] context, params, pathParams in
-            let typedInput = try JSONValueDecoder().decode(inputType, from: params)
-            
+            // Use the shared decoder so date strategy / userInfo stay
+            // consistent with the other addTool overload above.
+            let typedInput = try jsonValueDecoder.decode(inputType, from: params)
+
             var requestLogger = logger
             requestLogger[metadataKey: "mcpRequestId"] = "\(context.requestId)"
             requestLogger[metadataKey: "mcpMethod"] = "\(context.method)"
@@ -133,7 +143,7 @@ public class Server {
                 logger: requestLogger
             )
             let result = try await handler(request)
-            
+
             // Encode for content array
             let resultAsJsonString = try String(
                 data: jsonEncoder.encode(result),

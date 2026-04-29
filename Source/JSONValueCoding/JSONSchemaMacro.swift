@@ -21,7 +21,7 @@
 /// // ])
 /// ```
 @attached(member, names: named(jsonSchema))
-@attached(extension, conformances: JSONSchemaProvider)
+@attached(extension, conformances: JSONSchemaProvider, Sendable)
 public macro JSONSchema() = #externalMacro(module: "MCPMacros", type: "JSONSchemaMacro")
 
 /// Protocol for types that provide their own JSON schema
